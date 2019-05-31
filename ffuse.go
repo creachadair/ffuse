@@ -3,6 +3,7 @@ package ffuse
 import (
 	"context"
 	"io"
+	"os"
 	"reflect"
 	"sync"
 	"syscall"
@@ -43,10 +44,12 @@ var (
 	_ fs.NodeLinker          = Node{}
 	_ fs.NodeMkdirer         = Node{}
 	_ fs.NodeOpener          = Node{}
+	_ fs.NodeReadlinker      = Node{}
 	_ fs.NodeRemover         = Node{}
 	_ fs.NodeRenamer         = Node{}
 	_ fs.NodeRequestLookuper = Node{}
 	_ fs.NodeSetattrer       = Node{}
+	_ fs.NodeSymlinker       = Node{}
 	_ fs.HandleFlusher       = (*Handle)(nil)
 	_ fs.HandleReadDirAller  = (*Handle)(nil)
 	_ fs.HandleReader        = (*Handle)(nil)
@@ -214,6 +217,19 @@ func (n Node) Open(ctx context.Context, req *fuse.OpenRequest, rsp *fuse.OpenRes
 	return
 }
 
+// Readlink implements fs.NodeReadlinker.
+func (n Node) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (target string, err error) {
+	err = n.readLock(func() error {
+		buf := make([]byte, int(n.file.Size()))
+		if _, err := n.file.ReadAt(ctx, buf, 0); err != nil {
+			return err
+		}
+		target = string(buf)
+		return nil
+	})
+	return
+}
+
 // Remove implements fs.NodeRemover.
 func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	return n.writeLock(func() error {
@@ -312,6 +328,33 @@ func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.S
 	})
 }
 
+// Symlink implements fs.NodeSymlinker.
+func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.Node, err error) {
+	err = n.writeLock(func() error {
+		if n.file.HasChild(req.NewName) {
+			return fuse.EEXIST
+		}
+		f := n.file.New(&file.NewOptions{
+			Name: req.NewName,
+			Stat: file.Stat{
+				Mode:    os.ModeSymlink | 0555,
+				OwnerID: int(req.Uid),
+				GroupID: int(req.Gid),
+			},
+		})
+		if _, err := f.WriteAt(ctx, []byte(req.Target), 0); err != nil {
+			return err
+		}
+		defer n.touchIfOK(nil)
+		n.file.Set(req.NewName, f)
+
+		fnode := Node{fs: n.fs, file: f}
+		node = fnode
+		return nil
+	})
+	return
+}
+
 // writeLock executes fn while holding a write lock on n.
 func (n Node) writeLock(fn func() error) error {
 	n.fs.μ.Lock()
@@ -388,6 +431,8 @@ func (h Handle) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 				ktype = fuse.DT_Dir
 			case m.IsRegular():
 				ktype = fuse.DT_File
+			case m&os.ModeSymlink != 0:
+				ktype = fuse.DT_Link
 			}
 			elts = append(elts, fuse.Dirent{
 				Inode: fileInode(kid),
