@@ -2,6 +2,7 @@ package ffuse
 
 import (
 	"context"
+	"io"
 	"reflect"
 	"sync"
 	"syscall"
@@ -337,6 +338,12 @@ func (h Handle) Read(ctx context.Context, req *fuse.ReadRequest, rsp *fuse.ReadR
 	return h.readLock(func() error {
 		buf := make([]byte, req.Size)
 		nr, err := h.file.ReadAt(ctx, buf, req.Offset)
+		if err == io.EOF {
+			// read(2) signals EOF by returning 0 bytes; but io.ReaderAt requires
+			// that any short read report an error. We don't want to propagate
+			// that error back to FUSE, however, because it will turn into EIO.
+			err = nil
+		}
 		rsp.Data = buf[:nr]
 		return err
 	})
