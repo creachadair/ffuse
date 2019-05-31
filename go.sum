@@ -1,7 +1,7 @@
 bazil.org/fuse v0.0.0-20180421153158-65cc252bf669 h1:FNCRpXiquG1aoyqcIWVFmpTSKVcx2bQD38uZZeGtdlw=
 bazil.org/fuse v0.0.0-20180421153158-65cc252bf669/go.mod h1:Xbm+BRKSBEpa4q4hTSxohYNQpsxXPbPry4JJWOB3LB8=
-bitbucket.org/creachadair/ffs v0.0.0-20190531023956-c5b17098f175 h1:rL+7OCoG1bBIhiLDMy4dBZg4ChLwdoEhg4IfJBPexU8=
-bitbucket.org/creachadair/ffs v0.0.0-20190531023956-c5b17098f175/go.mod h1:0n9cWBHhL8cq8fSm4tSghbceQPJUUsHmzj08z/0WQCI=
+bitbucket.org/creachadair/ffs v0.0.0-20190531061940-a50fdb02be9a h1:uWshIEAbXYRd1NRVUs0esHqcyuXFCUXsvfuns1Cwhzo=
+bitbucket.org/creachadair/ffs v0.0.0-20190531061940-a50fdb02be9a/go.mod h1:0n9cWBHhL8cq8fSm4tSghbceQPJUUsHmzj08z/0WQCI=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
