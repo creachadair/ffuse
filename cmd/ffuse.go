@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+	"bitbucket.org/creachadair/ctrl"
 	"bitbucket.org/creachadair/ffs/blob"
 	"bitbucket.org/creachadair/ffs/blob/filestore"
 	"bitbucket.org/creachadair/ffs/blob/memstore"
@@ -50,6 +53,8 @@ Options:
 
 func main() {
 	flag.Parse()
+	log.SetFlags(0)
+	log.SetPrefix("[ffuse] ")
 	switch {
 	case *storeAddr == "":
 		log.Fatal("You must set a non-empty -store address")
@@ -59,6 +64,10 @@ func main() {
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
 		log.Print("Enabled FUSE debug logging")
 	}
+	ctrl.Run(realMain)
+}
+
+func realMain() error {
 	ctx := context.Background()
 
 	// Set up the CAS for the filesystem.
@@ -73,11 +82,11 @@ func main() {
 	if *rootKey != "" {
 		rk, err := hex.DecodeString(*rootKey)
 		if err != nil {
-			log.Fatalf("Invalid root key %q: %v", *rootKey, err)
+			ctrl.Fatalf("Invalid root key %q: %v", *rootKey, err)
 		}
 		root, err = file.Open(ctx, cas, string(rk))
 		if err != nil {
-			log.Fatalf("Opening root %q: %v", *rootKey, err)
+			ctrl.Fatalf("Opening root %q: %v", *rootKey, err)
 		}
 		log.Printf("Loaded filesystem from %q", *rootKey)
 	} else {
@@ -98,19 +107,41 @@ func main() {
 	if err != nil {
 		log.Fatalf("Mount failed: %v", err)
 	}
-	defer c.Close()
+	done := make(chan error)
+	go func() { defer close(done); done <- fs.Serve(c, server) }()
 
-	if err := fs.Serve(c, server); err != nil {
-		log.Fatalf("Serve failed: %v", err)
-	}
-
+	// Wait for the server to come up, and check that it successfully mounted.
 	<-c.Ready
 	if err := c.MountError; err != nil {
-		log.Fatalf("Mount error: %v", err)
+		c.Close()
+		ctrl.Fatalf("Mount error: %v", err)
 	}
+
+	// Block indefinitely to let the server run, but handle interrupt and
+	// termination signals to unmount and flush the root.
+	sig := make(chan os.Signal, 2)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case err := <-done:
+		log.Printf("Server exited: %v", err)
+	case s := <-sig:
+		log.Printf("Received signal: %v", s)
+		log.Printf("Unmounting %q", *mountPoint)
+		if err := fuse.Unmount(*mountPoint); err != nil {
+			log.Printf("Warning: unmount failed: %v", err)
+		}
+	}
+	if err := c.Close(); err != nil {
+		log.Printf("Warning: closing fuse connection failed: %v", err)
+	} else {
+		log.Print("Closed fuse connection")
+	}
+
+	// TODO: Put the root somewhere persistent.
 	key, err := root.Flush(ctx)
 	if err != nil {
-		log.Fatalf("Flush error; %v", err)
+		ctrl.Fatalf("Flush error: %v", err)
 	}
 	fmt.Println(hex.EncodeToString([]byte(key)))
+	return nil
 }

@@ -1,5 +1,7 @@
 bazil.org/fuse v0.0.0-20180421153158-65cc252bf669 h1:FNCRpXiquG1aoyqcIWVFmpTSKVcx2bQD38uZZeGtdlw=
 bazil.org/fuse v0.0.0-20180421153158-65cc252bf669/go.mod h1:Xbm+BRKSBEpa4q4hTSxohYNQpsxXPbPry4JJWOB3LB8=
+bitbucket.org/creachadair/ctrl v0.0.3 h1:cdpvLz6t7GadfvhNGfayY/JdwaKDY7TJKoKHw9alVM0=
+bitbucket.org/creachadair/ctrl v0.0.3/go.mod h1:oCmOytS7gdBXb1kVkI0esEVHo+eBgxizbzK2qtc5cYw=
 bitbucket.org/creachadair/ffs v0.0.0-20190531061940-a50fdb02be9a h1:uWshIEAbXYRd1NRVUs0esHqcyuXFCUXsvfuns1Cwhzo=
 bitbucket.org/creachadair/ffs v0.0.0-20190531061940-a50fdb02be9a/go.mod h1:0n9cWBHhL8cq8fSm4tSghbceQPJUUsHmzj08z/0WQCI=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
