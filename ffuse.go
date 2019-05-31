@@ -51,6 +51,7 @@ var (
 	_ fs.NodeFsyncer         = Node{}
 	_ fs.NodeGetxattrer      = Node{}
 	_ fs.NodeLinker          = Node{}
+	_ fs.NodeListxattrer     = Node{}
 	_ fs.NodeMkdirer         = Node{}
 	_ fs.NodeOpener          = Node{}
 	_ fs.NodeReadlinker      = Node{}
@@ -214,6 +215,24 @@ func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (nod
 		return nil
 	})
 	return
+}
+
+// Listxattr implements fs.NodeListxattrer.
+func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fuse.ListxattrResponse) error {
+	cap := int(req.Size)
+	add := func(name string) {
+		if cap == 0 || len(rsp.Xattr)+len(name) < cap {
+			rsp.Append(name)
+		}
+	}
+	add(ffsStorageKey)
+	add(ffsStorageKeyHex)
+	return n.readLock(func() error {
+		n.file.XAttr().List(func(key, _ string) {
+			add(key)
+		})
+		return nil
+	})
 }
 
 // Lookup implements fs.NodeRequestLookuper.
