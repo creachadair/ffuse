@@ -1,5 +1,6 @@
 // Package ffuse implements a FUSE filesystem driver backed by the flexible
-// filesystem package (bitbucket.org/creachadair/ffs).
+// filesystem package (bitbucket.org/creachadair/ffs). It is compatible with
+// the bazil.org/fuse and bazil.org/fuse/fs packages.
 package ffuse
 
 import (
