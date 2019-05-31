@@ -373,7 +373,7 @@ func (n Node) writeLock(fn func() error) error {
 	return fn()
 }
 
-// readLock executs fn while holding a read lock on n.
+// readLock executes fn while holding a read lock on n.
 func (n Node) readLock(fn func() error) error {
 	n.fs.μ.RLock()
 	defer n.fs.μ.RUnlock()
