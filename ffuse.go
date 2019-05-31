@@ -129,17 +129,19 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 	return
 }
 
-// Lookup implements fs.NodeStringLookuper.
-func (n Node) Lookup(ctx context.Context, name string) (node fs.Node, err error) {
+// Lookup implements fs.NodeRequestLookuper.
+func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.LookupResponse) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
-		f, err := n.file.Open(ctx, name)
+		f, err := n.file.Open(ctx, req.Name)
 		if xerrors.Is(err, file.ErrChildNotFound) {
 			return fuse.ENOENT
 		} else if err != nil {
 			return err
 		}
 
-		node = Node{fs: n.fs, file: f}
+		fnode := Node{fs: n.fs, file: f}
+		fnode.fillAttr(&rsp.Attr)
+		node = fnode
 		return nil
 	})
 	return
