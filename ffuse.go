@@ -232,8 +232,14 @@ func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fu
 			rsp.Append(name)
 		}
 	}
-	add(ffsStorageKey)
-	add(ffsStorageKeyHex)
+
+	// TODO: Should we include the storage key entries in the list?  I did at
+	// first, but then it complicates command-line usage because they're magic.
+	// So for now I've removed them.
+	//
+	//add(ffsStorageKey)
+	//add(ffsStorageKeyHex)
+
 	return n.readLock(func() error {
 		n.file.XAttr().List(func(key, _ string) {
 			add(key)
