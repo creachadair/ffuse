@@ -38,6 +38,8 @@ var (
 	_ fs.FS                  = (*FS)(nil)
 	_ fs.Node                = Node{}
 	_ fs.NodeCreater         = Node{}
+	_ fs.NodeFsyncer         = Node{}
+	_ fs.NodeLinker          = Node{}
 	_ fs.NodeMkdirer         = Node{}
 	_ fs.NodeOpener          = Node{}
 	_ fs.NodeRemover         = Node{}
@@ -124,6 +126,34 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 			writable: !req.Flags.IsReadOnly(),
 			append:   req.Flags&fuse.OpenAppend != 0,
 		}
+		return nil
+	})
+	return
+}
+
+// Fsync implements fs.NodeFsyncer.
+func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
+	return n.writeLock(func() error {
+		// With FFS it is not possible to sync metadata separately from data, so
+		// this implementation ignores the datasync bit.
+		_, err := n.file.Flush(ctx)
+		return err
+	})
+}
+
+// Link implements fs.NodeLinker.
+func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (node fs.Node, err error) {
+	err = n.writeLock(func() error {
+		if n.file.HasChild(req.NewName) {
+			return fuse.EEXIST
+		}
+		tgt := old.(Node)
+		if tgt.file.Stat().Mode.IsDir() {
+			return fuse.EPERM
+		}
+		n.file.Set(req.NewName, tgt.file)
+		node = n
+		defer n.touchIfOK(nil)
 		return nil
 	})
 	return
