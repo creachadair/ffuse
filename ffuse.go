@@ -1,3 +1,5 @@
+// Package ffuse implements a FUSE filesystem driver backed by the flexible
+// filesystem package (bitbucket.org/creachadair/ffs).
 package ffuse
 
 import (
@@ -15,10 +17,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func New(root *file.File) *FS {
-	return &FS{root: root}
-}
+// New constructs a new FS with the given root directory.  The resulting value
+// safe for concurrent use by multiple goroutines.
+// An *FS implements the bazil.org/fuse/fs.FS interface.
+func New(root *file.File) *FS { return &FS{root: root}}
 
+// FS implements the fs.FS interface.
 type FS struct {
 	// All operations on any node of the filesystem must hold μ.
 	// Operations that modify the contents of the tree must hold a write lock.
@@ -30,6 +34,8 @@ type FS struct {
 // Root implements the fs.FS interface.
 func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root}, nil }
 
+// A Node implements the fs.Node interface along with other node-related
+// interfaces from the bazil.org/fuse/fs package.
 type Node struct {
 	fs   *FS
 	file *file.File
@@ -65,6 +71,8 @@ func (n Node) Attr(ctx context.Context, attr *fuse.Attr) error {
 	})
 }
 
+// fillAttr populates the fields of attr with stat metadata from the file in n.
+// The caller must hold the filesystem lock.
 func (n Node) fillAttr(attr *fuse.Attr) {
 	nb := n.file.Size()
 	attr.Size = uint64(nb)
@@ -81,6 +89,8 @@ func (n Node) fillAttr(attr *fuse.Attr) {
 	}
 }
 
+// touchIfOK updates the last-modified timestamp of the file in n, if err == nil.
+// The caller must hold the filesystem write lock.
 func (n Node) touchIfOK(err error) {
 	if err == nil {
 		n.file.SetStat(func(s *file.Stat) { s.ModTime = time.Now() })
