@@ -15,7 +15,6 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
-	"bitbucket.org/creachadair/ctrl"
 	"bitbucket.org/creachadair/ffs/blob"
 	"bitbucket.org/creachadair/ffs/blob/filestore"
 	"bitbucket.org/creachadair/ffs/blob/memstore"
@@ -64,10 +63,7 @@ func main() {
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
 		log.Print("Enabled FUSE debug logging")
 	}
-	ctrl.Run(realMain)
-}
 
-func realMain() error {
 	ctx := context.Background()
 
 	// Set up the CAS for the filesystem.
@@ -82,11 +78,11 @@ func realMain() error {
 	if *rootKey != "" {
 		rk, err := hex.DecodeString(*rootKey)
 		if err != nil {
-			ctrl.Fatalf("Invalid root key %q: %v", *rootKey, err)
+			log.Fatalf("Invalid root key %q: %v", *rootKey, err)
 		}
 		root, err = file.Open(ctx, cas, string(rk))
 		if err != nil {
-			ctrl.Fatalf("Opening root %q: %v", *rootKey, err)
+			log.Fatalf("Opening root %q: %v", *rootKey, err)
 		}
 		log.Printf("Loaded filesystem from %q", *rootKey)
 	} else {
@@ -114,7 +110,7 @@ func realMain() error {
 	<-c.Ready
 	if err := c.MountError; err != nil {
 		c.Close()
-		ctrl.Fatalf("Mount error: %v", err)
+		log.Fatalf("Mount error: %v", err)
 	}
 
 	// Block indefinitely to let the server run, but handle interrupt and
@@ -140,8 +136,7 @@ func realMain() error {
 	// TODO: Put the root somewhere persistent.
 	key, err := root.Flush(ctx)
 	if err != nil {
-		ctrl.Fatalf("Flush error: %v", err)
+		log.Fatalf("Flush error: %v", err)
 	}
 	fmt.Println(hex.EncodeToString([]byte(key)))
-	return nil
 }
