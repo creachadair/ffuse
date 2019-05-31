@@ -306,7 +306,7 @@ type Handle struct {
 func (h Handle) Read(ctx context.Context, req *fuse.ReadRequest, rsp *fuse.ReadResponse) error {
 	return h.readLock(func() error {
 		buf := make([]byte, req.Size)
-		nr, err := h.file.ReadAt(ctx, rsp.Data, req.Offset)
+		nr, err := h.file.ReadAt(ctx, buf, req.Offset)
 		rsp.Data = buf[:nr]
 		return err
 	})
