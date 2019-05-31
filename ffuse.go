@@ -163,12 +163,6 @@ func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 const (
 	ffsStorageKey    = "ffs.storageKey"
 	ffsStorageKeyHex = ffsStorageKey + ".hex"
-
-	// Options for setxattr(2) calls.
-	xattrCreate  = 2
-	xattrReplace = 4
-
-	// TODO: These are for macOS.  For Linux, CREATE=1, REPLACE=2
 )
 
 // Getxattr implements fs.NodeGetxattrer. Each node has a synthesized xattr
@@ -196,7 +190,7 @@ func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse
 	return n.readLock(func() error {
 		val, ok := n.file.XAttr().Get(req.Name)
 		if !ok {
-			return fuse.Errno(syscall.ENOATTR)
+			return xattrErrnoNotFound
 		}
 		if cap := int(req.Size); cap > 0 && cap < len(val) {
 			val = val[:cap]
@@ -339,6 +333,22 @@ func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	})
 }
 
+// Removexattr implements fs.NodeRemovexattrer.
+func (n Node) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
+	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyHex {
+		return fuse.EPERM // these are read-only
+	}
+	return n.writeLock(func() error {
+		x := n.file.XAttr()
+		if _, ok := x.Get(req.Name); !ok {
+			return xattrErrnoNotFound
+		}
+		defer n.touchIfOK(nil)
+		x.Remove(req.Name)
+		return nil
+	})
+}
+
 // Rename implements fs.NodeRenamer.
 func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) error {
 	return n.writeLock(func() error {
@@ -427,7 +437,7 @@ func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
 				return fuse.EEXIST // create, but already exists
 			}
 		} else if req.Flags&xattrReplace != 0 {
-			return fuse.Errno(syscall.ENODATA) // replace, but does not exist
+			return xattrErrnoNotFound // replace, but does not exist
 		}
 
 		defer n.touchIfOK(nil)
