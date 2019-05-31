@@ -59,6 +59,7 @@ var (
 	_ fs.NodeRenamer         = Node{}
 	_ fs.NodeRequestLookuper = Node{}
 	_ fs.NodeSetattrer       = Node{}
+	_ fs.NodeSetxattrer      = Node{}
 	_ fs.NodeSymlinker       = Node{}
 	_ fs.HandleFlusher       = (*Handle)(nil)
 	_ fs.HandleReadDirAller  = (*Handle)(nil)
@@ -162,6 +163,12 @@ func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 const (
 	ffsStorageKey    = "ffs.storageKey"
 	ffsStorageKeyHex = ffsStorageKey + ".hex"
+
+	// Options for setxattr(2) calls.
+	xattrCreate  = 2
+	xattrReplace = 4
+
+	// TODO: These are for macOS.  For Linux, CREATE=1, REPLACE=2
 )
 
 // Getxattr implements fs.NodeGetxattrer. Each node has a synthesized xattr
@@ -396,6 +403,29 @@ func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.S
 			}
 		})
 		n.fillAttr(&rsp.Attr)
+		return nil
+	})
+}
+
+// Setxattr implements fs.NodeSetxattrer.
+func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
+	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyHex {
+		return fuse.EPERM
+	} else if req.Position != 0 {
+		return fuse.EPERM // macOS resource forks; don't store that crap
+	}
+	return n.writeLock(func() error {
+		x := n.file.XAttr()
+		if _, ok := x.Get(req.Name); ok {
+			if req.Flags&xattrCreate != 0 {
+				return fuse.EEXIST // create, but already exists
+			}
+		} else if req.Flags&xattrReplace != 0 {
+			return fuse.Errno(syscall.ENODATA) // replace, but does not exist
+		}
+
+		defer n.touchIfOK(nil)
+		x.Set(req.Name, string(req.Xattr))
 		return nil
 	})
 }
