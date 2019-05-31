@@ -2,10 +2,11 @@ bazil.org/fuse v0.0.0-20180421153158-65cc252bf669 h1:FNCRpXiquG1aoyqcIWVFmpTSKVc
 bazil.org/fuse v0.0.0-20180421153158-65cc252bf669/go.mod h1:Xbm+BRKSBEpa4q4hTSxohYNQpsxXPbPry4JJWOB3LB8=
 bitbucket.org/creachadair/ctrl v0.0.3 h1:cdpvLz6t7GadfvhNGfayY/JdwaKDY7TJKoKHw9alVM0=
 bitbucket.org/creachadair/ctrl v0.0.3/go.mod h1:oCmOytS7gdBXb1kVkI0esEVHo+eBgxizbzK2qtc5cYw=
-bitbucket.org/creachadair/ffs v0.0.0-20190531061940-a50fdb02be9a h1:uWshIEAbXYRd1NRVUs0esHqcyuXFCUXsvfuns1Cwhzo=
-bitbucket.org/creachadair/ffs v0.0.0-20190531061940-a50fdb02be9a/go.mod h1:0n9cWBHhL8cq8fSm4tSghbceQPJUUsHmzj08z/0WQCI=
+bitbucket.org/creachadair/ffs v0.0.0-20190531174711-3baa4a14cfce h1:y6p2iLAkK+NgR+KXg0Q/cLUUVNAcUc9ACIyfkSAjQXU=
+bitbucket.org/creachadair/ffs v0.0.0-20190531174711-3baa4a14cfce/go.mod h1:0n9cWBHhL8cq8fSm4tSghbceQPJUUsHmzj08z/0WQCI=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/go-cmp v0.3.0 h1:crn/baboCvb5fXaQ0IJ1SGTsTVrWpDsCWC8EGETZijY=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
