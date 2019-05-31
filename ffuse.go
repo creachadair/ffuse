@@ -35,20 +35,20 @@ type Node struct {
 
 // Verify interface satisfactions.
 var (
-	_ fs.FS                 = (*FS)(nil)
-	_ fs.Node               = Node{}
-	_ fs.NodeCreater        = Node{}
-	_ fs.NodeMkdirer        = Node{}
-	_ fs.NodeOpener         = Node{}
-	_ fs.NodeRemover        = Node{}
-	_ fs.NodeRenamer        = Node{}
-	_ fs.NodeSetattrer      = Node{}
-	_ fs.NodeStringLookuper = Node{}
-	_ fs.HandleFlusher      = Handle{}
-	_ fs.HandleReadDirAller = Handle{}
-	_ fs.HandleReader       = Handle{}
-	_ fs.HandleReleaser     = Handle{}
-	_ fs.HandleWriter       = Handle{}
+	_ fs.FS                  = (*FS)(nil)
+	_ fs.Node                = Node{}
+	_ fs.NodeCreater         = Node{}
+	_ fs.NodeMkdirer         = Node{}
+	_ fs.NodeOpener          = Node{}
+	_ fs.NodeRemover         = Node{}
+	_ fs.NodeRenamer         = Node{}
+	_ fs.NodeRequestLookuper = Node{}
+	_ fs.NodeSetattrer       = Node{}
+	_ fs.HandleFlusher       = (*Handle)(nil)
+	_ fs.HandleReadDirAller  = (*Handle)(nil)
+	_ fs.HandleReader        = (*Handle)(nil)
+	_ fs.HandleReleaser      = (*Handle)(nil)
+	_ fs.HandleWriter        = (*Handle)(nil)
 )
 
 // Attr implements fs.Node.
@@ -119,7 +119,7 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 		defer fnode.touchIfOK(nil)
 
 		node = fnode
-		handle = Handle{
+		handle = &Handle{
 			Node:     fnode,
 			writable: !req.Flags.IsReadOnly(),
 			append:   req.Flags&fuse.OpenAppend != 0,
@@ -171,7 +171,7 @@ func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, 
 // Open implements fs.NodeOpener.
 func (n Node) Open(ctx context.Context, req *fuse.OpenRequest, rsp *fuse.OpenResponse) (handle fs.Handle, err error) {
 	err = n.readLock(func() error {
-		handle = Handle{
+		handle = &Handle{
 			Node:     n,
 			writable: !req.Flags.IsReadOnly(),
 			append:   req.Flags&fuse.OpenAppend != 0,
