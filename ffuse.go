@@ -5,6 +5,7 @@ package ffuse
 
 import (
 	"context"
+	"encoding/hex"
 	"io"
 	"os"
 	"reflect"
@@ -21,7 +22,7 @@ import (
 // New constructs a new FS with the given root directory.  The resulting value
 // safe for concurrent use by multiple goroutines.
 // An *FS implements the bazil.org/fuse/fs.FS interface.
-func New(root *file.File) *FS { return &FS{root: root}}
+func New(root *file.File) *FS { return &FS{root: root} }
 
 // FS implements the fs.FS interface.
 type FS struct {
@@ -48,6 +49,7 @@ var (
 	_ fs.Node                = Node{}
 	_ fs.NodeCreater         = Node{}
 	_ fs.NodeFsyncer         = Node{}
+	_ fs.NodeGetxattrer      = Node{}
 	_ fs.NodeLinker          = Node{}
 	_ fs.NodeMkdirer         = Node{}
 	_ fs.NodeOpener          = Node{}
@@ -153,6 +155,46 @@ func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 		// this implementation ignores the datasync bit.
 		_, err := n.file.Flush(ctx)
 		return err
+	})
+}
+
+const (
+	ffsStorageKey    = "ffs.storageKey"
+	ffsStorageKeyHex = ffsStorageKey + ".hex"
+)
+
+// Getxattr implements fs.NodeGetxattrer. Each node has a synthesized xattr
+// called "ffs.storageKey" that returns the storage key for the node. Reading
+// the attribute implicitly flushes the target node to storage.
+func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse.GetxattrResponse) error {
+	// Reading the storage key requires a write lock so we can flush.
+	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyHex {
+		return n.writeLock(func() error {
+			key, err := n.file.Flush(ctx)
+			if err == nil {
+				if req.Name == ffsStorageKeyHex {
+					key = hex.EncodeToString([]byte(key))
+				}
+				if cap := int(req.Size); cap > 0 && cap < len(key) {
+					key = key[:cap]
+				}
+				rsp.Xattr = []byte(key)
+			}
+			return err
+		})
+	}
+
+	// Other attributes require only a read lock.
+	return n.readLock(func() error {
+		val, ok := n.file.XAttr().Get(req.Name)
+		if !ok {
+			return fuse.Errno(syscall.ENOATTR)
+		}
+		if cap := int(req.Size); cap > 0 && cap < len(val) {
+			val = val[:cap]
+		}
+		rsp.Xattr = []byte(val)
+		return nil
 	})
 }
 
