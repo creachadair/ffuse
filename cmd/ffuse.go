@@ -93,6 +93,7 @@ func main() {
 		fuse.FSName("ffs"),
 		fuse.Subtype("ffs"),
 		fuse.VolumeName("FFS"),
+		fuse.NoAppleDouble(),
 	)
 	if err != nil {
 		log.Fatalf("Mount failed: %v", err)
