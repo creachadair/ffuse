@@ -3,10 +3,13 @@ package main
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"hash"
 	"log"
 	"os"
 	"os/signal"
@@ -16,11 +19,14 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 	"bitbucket.org/creachadair/ffs/blob"
+	"bitbucket.org/creachadair/ffs/blob/encrypted"
 	"bitbucket.org/creachadair/ffs/blob/filestore"
 	"bitbucket.org/creachadair/ffs/blob/memstore"
 	"bitbucket.org/creachadair/ffs/blob/store"
 	"bitbucket.org/creachadair/ffs/file"
 	"bitbucket.org/creachadair/ffuse"
+	"bitbucket.org/creachadair/getpass"
+	"bitbucket.org/creachadair/keyfile"
 )
 
 // TODO: Add encryption support.
@@ -31,6 +37,8 @@ var (
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	rootKey    = flag.String("root", "", "If set, the key of the root node (hex encoded)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
+	keyFile    = flag.String("keyfile", "$HOME/.config/ffuse.keys", "Path of encryption key file")
+	doEncrypt  = flag.String("encrypt", "", "Enable encryption with this key slug")
 )
 
 func init() {
@@ -71,7 +79,28 @@ func main() {
 	if err != nil {
 		log.Fatalf("Opening blob storage: %v", err)
 	}
-	cas := blob.NewCAS(s, sha256.New)
+	digest := sha256.New
+
+	if *doEncrypt != "" {
+		pp, err := getpass.Prompt("Passphrase for " + *doEncrypt + ": ")
+		if err != nil {
+			log.Fatalf("Reading passphrase: %v", err)
+		}
+		key, err := keyfile.LoadKey(os.ExpandEnv(*keyFile), *doEncrypt, pp)
+		if err != nil {
+			log.Fatalf("Loading encryption key: %v", err)
+		}
+		c, err := aes.NewCipher(key)
+		if err != nil {
+			log.Fatalf("Creating cipher: %v", err)
+		}
+		s = encrypted.New(s, c, nil)
+		digest = func() hash.Hash {
+			return hmac.New(sha256.New, key)
+		}
+		log.Printf("Enabled encryption with key %q", *doEncrypt)
+	}
+	cas := blob.NewCAS(s, digest)
 
 	// Open an existing root, or start a fresh one.
 	var root *file.File
