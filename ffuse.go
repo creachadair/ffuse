@@ -211,7 +211,7 @@ func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (nod
 			return fuse.EPERM
 		}
 		n.file.Set(req.NewName, tgt.file)
-		node = n
+		node = tgt
 		defer n.touchIfOK(nil)
 		return nil
 	})
