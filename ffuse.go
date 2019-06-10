@@ -15,7 +15,7 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
-	"bitbucket.org/creachadair/ffs/file"
+	"github.com/creachadair/ffs/file"
 	"golang.org/x/xerrors"
 )
 

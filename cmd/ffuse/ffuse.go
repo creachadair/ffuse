@@ -18,15 +18,15 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
-	"bitbucket.org/creachadair/ffs/blob"
-	"bitbucket.org/creachadair/ffs/blob/encrypted"
-	"bitbucket.org/creachadair/ffs/blob/filestore"
-	"bitbucket.org/creachadair/ffs/blob/memstore"
-	"bitbucket.org/creachadair/ffs/blob/store"
-	"bitbucket.org/creachadair/ffs/file"
-	"bitbucket.org/creachadair/ffuse"
 	"bitbucket.org/creachadair/getpass"
 	"bitbucket.org/creachadair/keyfile"
+	"github.com/creachadair/ffs/blob"
+	"github.com/creachadair/ffs/blob/encrypted"
+	"github.com/creachadair/ffs/blob/filestore"
+	"github.com/creachadair/ffs/blob/memstore"
+	"github.com/creachadair/ffs/blob/store"
+	"github.com/creachadair/ffs/file"
+	"github.com/creachadair/ffuse"
 )
 
 // TODO: Add encryption support.

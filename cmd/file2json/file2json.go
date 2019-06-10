@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"bitbucket.org/creachadair/ffs/file/wirepb"
+	"github.com/creachadair/ffs/file/wirepb"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 )
