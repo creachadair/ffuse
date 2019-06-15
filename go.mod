@@ -6,7 +6,7 @@ require (
 	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 	bitbucket.org/creachadair/getpass v0.0.2
 	bitbucket.org/creachadair/keyfile v0.0.6
-	github.com/creachadair/ffs v0.0.0-20190610133815-0a1bda2218be
+	github.com/creachadair/ffs v0.0.0-20190615193417-9ca3eb043ddb
 	github.com/golang/protobuf v1.3.1
 	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5 // indirect
 	golang.org/x/net v0.0.0-20190607181551-461777fb6f67 // indirect

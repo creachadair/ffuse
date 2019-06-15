@@ -6,8 +6,8 @@ bitbucket.org/creachadair/keyfile v0.0.6 h1:vCpmgc9usST8odII4rNKoHzqj4MB/QbOnsuo
 bitbucket.org/creachadair/keyfile v0.0.6/go.mod h1:Re4Jju3cqtpeaIQun4+qO6pQTTwisahG5RWrmD4z9ZE=
 github.com/creachadair/atomicfile v0.2.0 h1:ZtLG+eU5gQwStcLwuq5WZRmzlxNuJhFIxsEjxsFdqrQ=
 github.com/creachadair/atomicfile v0.2.0/go.mod h1:Tvr/wsb3lQY4dj+9utcmJ7Gp6wi3LKA8jRNqoxUhA2M=
-github.com/creachadair/ffs v0.0.0-20190610133815-0a1bda2218be h1:Fewg46a5oRdGHiqbixPbm5ePPq8w6Bz/97zRdMM4lKk=
-github.com/creachadair/ffs v0.0.0-20190610133815-0a1bda2218be/go.mod h1:XHWmBqkuEfU/xnIqVdo2KiLKj1dhYksw7c5z9lf3NDM=
+github.com/creachadair/ffs v0.0.0-20190615193417-9ca3eb043ddb h1:WZzjHH4/PA1sFS0yy/Ye3lDJwzFV7bW4tTTaASWAfjM=
+github.com/creachadair/ffs v0.0.0-20190615193417-9ca3eb043ddb/go.mod h1:XHWmBqkuEfU/xnIqVdo2KiLKj1dhYksw7c5z9lf3NDM=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
