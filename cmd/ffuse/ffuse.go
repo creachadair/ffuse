@@ -18,8 +18,6 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
-	"bitbucket.org/creachadair/getpass"
-	"bitbucket.org/creachadair/keyfile"
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/blob/encrypted"
 	"github.com/creachadair/ffs/blob/filestore"
@@ -27,6 +25,8 @@ import (
 	"github.com/creachadair/ffs/blob/store"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffuse"
+	"github.com/creachadair/getpass"
+	"github.com/creachadair/keyfile"
 )
 
 // TODO: Add encryption support.
