@@ -19,6 +19,7 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 	"github.com/creachadair/ffs/blob"
+	"github.com/creachadair/ffs/blob/badgerstore"
 	"github.com/creachadair/ffs/blob/encrypted"
 	"github.com/creachadair/ffs/blob/filestore"
 	"github.com/creachadair/ffs/blob/memstore"
@@ -29,7 +30,6 @@ import (
 	"github.com/creachadair/keyfile"
 )
 
-// TODO: Add encryption support.
 // TODO: Add compression.
 
 var (
@@ -54,6 +54,7 @@ Options:
 		flag.PrintDefaults()
 	}
 
+	store.Default.Register("badger", badgerstore.Opener)
 	store.Default.Register("file", filestore.Opener)
 	store.Default.Register("mem", memstore.Opener)
 }
