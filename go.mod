@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
-	github.com/creachadair/ffs v0.0.0-20190621063353-8b8a9a989134
+	github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0
 	github.com/creachadair/getpass v0.1.0
 	github.com/creachadair/keyfile v0.1.0
 	github.com/golang/protobuf v1.3.1
