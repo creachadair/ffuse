@@ -18,8 +18,8 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/ffs/blob"
-	"github.com/creachadair/ffs/blob/badgerstore"
 	"github.com/creachadair/ffs/blob/encrypted"
 	"github.com/creachadair/ffs/blob/filestore"
 	"github.com/creachadair/ffs/blob/memstore"

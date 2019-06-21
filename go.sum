@@ -4,6 +4,8 @@ github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 h1:PqzgE6kAMi
 github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=
 github.com/creachadair/atomicfile v0.2.0 h1:ZtLG+eU5gQwStcLwuq5WZRmzlxNuJhFIxsEjxsFdqrQ=
 github.com/creachadair/atomicfile v0.2.0/go.mod h1:Tvr/wsb3lQY4dj+9utcmJ7Gp6wi3LKA8jRNqoxUhA2M=
+github.com/creachadair/badgerstore v0.0.0-20190621174744-f45712accee3 h1:4oXsL7y8K935KzKTnMdSp4TnzT1eOGt5ih5jzxcKa+s=
+github.com/creachadair/badgerstore v0.0.0-20190621174744-f45712accee3/go.mod h1:hemOIeMDdBBIGHV37N+I4qtfiMfSAw0gsaAiNQSpdHQ=
 github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0 h1:HN3mEfBjin8Y9anajeS2lsHJctzZIcotCGhprOh2PQE=
 github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0/go.mod h1:8PQeiBWUu/EbSFGLj2LOEolp5TEjQNcEGmZG5ls7RmM=
 github.com/creachadair/getpass v0.1.0 h1:L/bEjfydVpDLP+0VIqK9z4rFktOz/5hYBDVeyWe61zg=
@@ -14,6 +16,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgraph-io/badger/v2 v2.0.0-20190620211019-41d170b5158f h1:vxg+rV4/+3GqzeZZdZUSjMlnbdUx0Vr65okIulvJNHk=
 github.com/dgraph-io/badger/v2 v2.0.0-20190620211019-41d170b5158f/go.mod h1:jUaIjOV835xZ/mCLG/8P/38ZxiT4bG/K1khDNZJxuwU=
+github.com/dgraph-io/badger/v2 v2.0.0-20190621164610-46698910835f h1:3RUBoS8yrsYjqccgX2MkNa4QRbB0EBKpjJjFVPlsIW4=
+github.com/dgraph-io/badger/v2 v2.0.0-20190621164610-46698910835f/go.mod h1:jUaIjOV835xZ/mCLG/8P/38ZxiT4bG/K1khDNZJxuwU=
 github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 h1:afESQBXJEnj3fu+34X//E8Wg3nEbMJxJkwSc0tPePK0=
 github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102/go.mod h1:SqUrOPUnsFjfmXRMNPybcSiG0BgUW2AuFH8PAnS2iTw=
 github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
