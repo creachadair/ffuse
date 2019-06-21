@@ -37,7 +37,7 @@ var (
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	rootKey    = flag.String("root", "", "If set, the key of the root node (hex encoded)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
-	keyFile    = flag.String("keyfile", "$HOME/.config/ffuse.keys", "Path of encryption key file")
+	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
 	doEncrypt  = flag.String("encrypt", "", "Enable encryption with this key slug")
 )
 
@@ -82,6 +82,9 @@ func main() {
 	digest := sha256.New
 
 	if *doEncrypt != "" {
+		if *keyFile == "" {
+			log.Fatal("No -keyfile path was specified")
+		}
 		pp, err := getpass.Prompt("Passphrase for " + *doEncrypt + ": ")
 		if err != nil {
 			log.Fatalf("Reading passphrase: %v", err)
