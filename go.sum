@@ -8,6 +8,8 @@ github.com/creachadair/badgerstore v0.0.0-20190621174744-f45712accee3 h1:4oXsL7y
 github.com/creachadair/badgerstore v0.0.0-20190621174744-f45712accee3/go.mod h1:hemOIeMDdBBIGHV37N+I4qtfiMfSAw0gsaAiNQSpdHQ=
 github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0 h1:HN3mEfBjin8Y9anajeS2lsHJctzZIcotCGhprOh2PQE=
 github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0/go.mod h1:8PQeiBWUu/EbSFGLj2LOEolp5TEjQNcEGmZG5ls7RmM=
+github.com/creachadair/ffs v0.0.0-20190621180721-f69ab3b5f90c h1:rZhWAUkK1gncnMsUDrv7tL6Rl1iwEKucvrZUjcR1FDU=
+github.com/creachadair/ffs v0.0.0-20190621180721-f69ab3b5f90c/go.mod h1:XHWmBqkuEfU/xnIqVdo2KiLKj1dhYksw7c5z9lf3NDM=
 github.com/creachadair/getpass v0.1.0 h1:L/bEjfydVpDLP+0VIqK9z4rFktOz/5hYBDVeyWe61zg=
 github.com/creachadair/getpass v0.1.0/go.mod h1:Wup04NkmcX+Af5Z2pt3FJFySTC7bs9PcsqS2zC2Ar7M=
 github.com/creachadair/keyfile v0.1.0 h1:QrhRV4V8KGosOB7PAxtbQ9LJS83UJ+HC1/IXiqU/bdk=

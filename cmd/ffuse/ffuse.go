@@ -80,6 +80,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Opening blob storage: %v", err)
 	}
+	defer blob.CloseStore(ctx, s)
 	digest := sha256.New
 
 	if *doEncrypt != "" {
