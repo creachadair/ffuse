@@ -22,7 +22,7 @@ import (
 // New constructs a new FS with the given root directory.  The resulting value
 // safe for concurrent use by multiple goroutines.
 // An *FS implements the bazil.org/fuse/fs.FS interface.
-func New(root *file.File) *FS { return &FS{root: root} }
+func New(root *file.Root) *FS { return &FS{root: root} }
 
 // FS implements the fs.FS interface.
 type FS struct {
@@ -30,11 +30,11 @@ type FS struct {
 	// Operations that modify the contents of the tree must hold a write lock.
 
 	μ    sync.RWMutex
-	root *file.File
+	root *file.Root
 }
 
 // Root implements the fs.FS interface.
-func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root}, nil }
+func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root.File()}, nil }
 
 // A Node implements the fs.Node interface along with other node-related
 // interfaces from the bazil.org/fuse/fs package.
