@@ -5,7 +5,7 @@ go 1.12
 require (
 	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 	github.com/creachadair/badgerstore v0.0.0-20190621174744-f45712accee3
-	github.com/creachadair/ffs v0.0.0-20190621180721-f69ab3b5f90c
+	github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292
 	github.com/creachadair/getpass v0.1.0
 	github.com/creachadair/keyfile v0.1.0
 	github.com/golang/protobuf v1.3.1

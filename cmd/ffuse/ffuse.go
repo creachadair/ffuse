@@ -6,7 +6,6 @@ import (
 	"crypto/aes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"hash"
@@ -35,8 +34,9 @@ import (
 var (
 	storeAddr  = flag.String("store", "", "Blob storage address (required)")
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
-	rootKey    = flag.String("root", "", "If set, the key of the root node (hex encoded)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
+	doNew      = flag.Bool("new", false, "Create a new empty filesystem root")
+	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
 	doEncrypt  = flag.String("encrypt", "", "Enable encryption with this key slug")
 )
@@ -68,6 +68,8 @@ func main() {
 		log.Fatal("You must set a non-empty -store address")
 	case *mountPoint == "":
 		log.Fatal("You must set a non-empty -mount path")
+	case *rootKey == "":
+		log.Fatal("You must set a non-empty -root pointer key")
 	case *doDebug:
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
 		log.Print("Enabled FUSE debug logging")
@@ -108,22 +110,18 @@ func main() {
 	cas := blob.NewCAS(s, digest)
 
 	// Open an existing root, or start a fresh one.
-	var root *file.File
-	if *rootKey != "" {
-		rk, err := hex.DecodeString(*rootKey)
-		if err != nil {
-			log.Fatalf("Invalid root key %q: %v", *rootKey, err)
-		}
-		root, err = file.Open(ctx, cas, string(rk))
-		if err != nil {
-			log.Fatalf("Opening root %q: %v", *rootKey, err)
-		}
-		log.Printf("Loaded filesystem from %q", *rootKey)
-	} else {
-		root = file.New(cas, &file.NewOptions{
-			Stat: file.Stat{Mode: os.ModeDir | 0755},
+	var root *file.Root
+	if *doNew {
+		root = file.NewRoot(cas, *rootKey)
+		root.File().SetStat(func(s *file.Stat) {
+			s.Mode = os.ModeDir | 0755
 		})
 		log.Print("Creating empty filesystem root")
+	} else if r, err := file.OpenRoot(ctx, cas, *rootKey); err != nil {
+		log.Fatalf("Opening root %q: %v", *rootKey, err)
+	} else {
+		root = r
+		log.Printf("Loaded filesystem from %q", *rootKey)
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
@@ -167,10 +165,10 @@ func main() {
 		log.Print("Closed fuse connection")
 	}
 
-	// TODO: Put the root somewhere persistent.
+	// At exit, flush and update the root pointer.
 	key, err := root.Flush(ctx)
 	if err != nil {
 		log.Fatalf("Flush error: %v", err)
 	}
-	fmt.Println(hex.EncodeToString([]byte(key)))
+	fmt.Printf("%x\n", key)
 }
