@@ -36,6 +36,7 @@ var (
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
 	doNew      = flag.Bool("new", false, "Create a new empty filesystem root")
+	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
 	doEncrypt  = flag.String("encrypt", "", "Enable encryption with this key slug")
@@ -126,12 +127,17 @@ func main() {
 
 	// Mount the filesystem and serve from our filesystem root.
 	server := ffuse.New(root)
-	c, err := fuse.Mount(*mountPoint,
+	opts := []fuse.MountOption{
 		fuse.FSName("ffs"),
 		fuse.Subtype("ffs"),
 		fuse.VolumeName("FFS"),
 		fuse.NoAppleDouble(),
-	)
+	}
+	if *doReadOnly {
+		opts = append(opts, fuse.ReadOnly())
+	}
+	c, err := fuse.Mount(*mountPoint, opts...)
+
 	if err != nil {
 		log.Fatalf("Mount failed: %v", err)
 	}
