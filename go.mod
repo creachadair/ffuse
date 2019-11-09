@@ -9,6 +9,9 @@ require (
 	github.com/creachadair/getpass v0.1.0
 	github.com/creachadair/keyfile v0.1.1
 	github.com/golang/protobuf v1.3.2
-	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7 // indirect
-	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
+	golang.org/x/crypto v0.0.0-20191108234033-bd318be0434a // indirect
+	golang.org/x/net v0.0.0-20191108225301-c7154b74f18f // indirect
+	golang.org/x/sys v0.0.0-20191105231009-c1f44814a5cd // indirect
+	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
+	gopkg.in/yaml.v2 v2.2.5 // indirect
 )
