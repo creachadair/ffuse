@@ -1,6 +1,6 @@
 module github.com/creachadair/ffuse
 
-go 1.12
+go 1.13
 
 require (
 	bazil.org/fuse v0.0.0-20200117225306-7b5117fecadc
