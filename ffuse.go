@@ -6,6 +6,7 @@ package ffuse
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"io"
 	"os"
 	"reflect"
@@ -16,7 +17,6 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 	"github.com/creachadair/ffs/file"
-	"golang.org/x/xerrors"
 )
 
 // New constructs a new FS with the given root directory.  The resulting value
@@ -111,7 +111,7 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 			if req.Flags&fuse.OpenExclusive != 0 {
 				return fuse.EEXIST
 			}
-		} else if !xerrors.Is(err, file.ErrChildNotFound) {
+		} else if !errors.Is(err, file.ErrChildNotFound) {
 			return err
 		} else {
 			// The file doesn't exist; create a new empty file or directory.
@@ -246,7 +246,7 @@ func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fu
 func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.LookupResponse) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
 		f, err := n.file.Open(ctx, req.Name)
-		if xerrors.Is(err, file.ErrChildNotFound) {
+		if errors.Is(err, file.ErrChildNotFound) {
 			return fuse.ENOENT
 		} else if err != nil {
 			return err
@@ -313,7 +313,7 @@ func (n Node) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (target s
 func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	return n.writeLock(func() error {
 		f, err := n.file.Open(ctx, req.Name)
-		if xerrors.Is(err, file.ErrChildNotFound) {
+		if errors.Is(err, file.ErrChildNotFound) {
 			return fuse.ENOENT
 		} else if err != nil {
 			return err
@@ -355,7 +355,7 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 		// N.B. Order matters here, since n and dir may be the same node.
 
 		src, err := n.file.Open(ctx, req.OldName)
-		if xerrors.Is(err, file.ErrChildNotFound) {
+		if errors.Is(err, file.ErrChildNotFound) {
 			return fuse.ENOENT
 		} else if err != nil {
 			return err
@@ -378,7 +378,7 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 			// Remove the existing file from the target location.
 			defer dir.touchIfOK(nil)
 			dir.file.Remove(req.NewName)
-		} else if !xerrors.Is(err, file.ErrChildNotFound) {
+		} else if !errors.Is(err, file.ErrChildNotFound) {
 			return err
 		}
 
