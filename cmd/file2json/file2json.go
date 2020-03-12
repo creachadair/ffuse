@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/creachadair/ffs/file/wirepb"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func main() {
@@ -20,9 +20,5 @@ func main() {
 	if err := proto.Unmarshal(data, &pb); err != nil {
 		log.Fatalf("Decode: %v", err)
 	}
-	var m jsonpb.Marshaler
-	if err := m.Marshal(os.Stdout, &pb); err != nil {
-		log.Fatalf("Encode: %v", err)
-	}
-	io.WriteString(os.Stdout, "\n")
+	io.WriteString(os.Stdout, protojson.Format(&pb))
 }
