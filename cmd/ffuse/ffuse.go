@@ -19,7 +19,8 @@ import (
 	"bazil.org/fuse/fs"
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/ffs/blob"
-	"github.com/creachadair/ffs/blob/encrypted"
+	"github.com/creachadair/ffs/blob/codecs/encrypted"
+	"github.com/creachadair/ffs/blob/encoded"
 	"github.com/creachadair/ffs/blob/filestore"
 	"github.com/creachadair/ffs/blob/memstore"
 	"github.com/creachadair/ffs/blob/store"
@@ -102,7 +103,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Creating cipher: %v", err)
 		}
-		s = encrypted.New(s, c, nil)
+		s = encoded.New(s, encrypted.New(c, nil))
 		digest = func() hash.Hash {
 			return hmac.New(sha256.New, key)
 		}
