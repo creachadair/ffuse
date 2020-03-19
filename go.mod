@@ -6,7 +6,7 @@ require (
 	bazil.org/fuse v0.0.0-20200117225306-7b5117fecadc
 	github.com/OneOfOne/xxhash v1.2.7 // indirect
 	github.com/creachadair/badgerstore v0.0.6
-	github.com/creachadair/ffs v0.0.0-20200312020635-a8a4e761bb52
+	github.com/creachadair/ffs v0.0.0-20200319002147-c1a3560e7ca5
 	github.com/creachadair/getpass v0.1.0
 	github.com/creachadair/keyfile v0.2.0
 	github.com/dgraph-io/badger/v2 v2.0.2 // indirect
