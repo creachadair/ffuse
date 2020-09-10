@@ -40,7 +40,6 @@ var (
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
-	doEncrypt  = flag.String("encrypt", "", "Enable encryption with this key slug")
 )
 
 func init() {
@@ -87,15 +86,12 @@ func main() {
 	defer blob.CloseStore(ctx, s)
 	digest := sha256.New
 
-	if *doEncrypt != "" {
-		if *keyFile == "" {
-			log.Fatal("No -keyfile path was specified")
-		}
-		pp, err := getpass.Prompt("Passphrase for " + *doEncrypt + ": ")
+	if *keyFile != "" {
+		pp, err := getpass.Prompt("Encryption passphrase: ")
 		if err != nil {
 			log.Fatalf("Reading passphrase: %v", err)
 		}
-		key, err := keyfile.LoadKey(os.ExpandEnv(*keyFile), *doEncrypt, pp)
+		key, err := keyfile.LoadKey(os.ExpandEnv(*keyFile), pp)
 		if err != nil {
 			log.Fatalf("Loading encryption key: %v", err)
 		}
@@ -107,7 +103,7 @@ func main() {
 		digest = func() hash.Hash {
 			return hmac.New(sha256.New, key)
 		}
-		log.Printf("Enabled encryption with key %q", *doEncrypt)
+		log.Printf("Enabled encryption with keyfile %q", *keyFile)
 	}
 	cas := blob.NewCAS(s, digest)
 
