@@ -39,8 +39,9 @@ func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root.File()
 // A Node implements the fs.Node interface along with other node-related
 // interfaces from the bazil.org/fuse/fs package.
 type Node struct {
-	fs   *FS
-	file *file.File
+	fs     *FS
+	file   *file.File
+	isView bool
 }
 
 // Verify interface satisfactions.
@@ -105,6 +106,9 @@ func (n Node) touchIfOK(err error) {
 // Create implements fs.NodeCreater.
 func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.CreateResponse) (node fs.Node, handle fs.Handle, err error) {
 	err = n.writeLock(func() error {
+		if n.isView {
+			return fuse.EPERM
+		}
 		f, err := n.file.Open(ctx, req.Name)
 		if err == nil {
 			// The file already exists; if O_EXCL is set the request fails (EEXIST).
@@ -135,14 +139,14 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 		}
 
 		// Now all is well, and we can safely return a file.
-		fnode := Node{fs: n.fs, file: f}
+		fnode := Node{fs: n.fs, file: f, isView: n.isView || f.IsView()}
 		fnode.fillAttr(&rsp.Attr)
 		defer fnode.touchIfOK(nil)
 
 		node = fnode
 		handle = &Handle{
 			Node:     fnode,
-			writable: !req.Flags.IsReadOnly(),
+			writable: !fnode.isView && !req.Flags.IsReadOnly(),
 			append:   req.Flags&fuse.OpenAppend != 0,
 		}
 		return nil
@@ -252,7 +256,7 @@ func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.Loo
 			return err
 		}
 
-		fnode := Node{fs: n.fs, file: f}
+		fnode := Node{fs: n.fs, file: f, isView: n.isView || f.IsView()}
 		fnode.fillAttr(&rsp.Attr)
 		node = fnode
 		return nil
@@ -263,7 +267,9 @@ func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.Loo
 // Mkdir implements fs.NodeMkdirer.
 func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
-		if n.file.HasChild(req.Name) {
+		if n.isView {
+			return fuse.EPERM
+		} else if n.file.HasChild(req.Name) {
 			return fuse.EEXIST
 		}
 		defer n.touchIfOK(nil)
@@ -277,7 +283,7 @@ func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, 
 			},
 		})
 		n.file.Set(req.Name, f)
-		node = Node{fs: n.fs, file: f}
+		node = Node{fs: n.fs, file: f, isView: n.isView || f.IsView()}
 		return nil
 	})
 	return
@@ -288,7 +294,7 @@ func (n Node) Open(ctx context.Context, req *fuse.OpenRequest, rsp *fuse.OpenRes
 	err = n.readLock(func() error {
 		handle = &Handle{
 			Node:     n,
-			writable: !req.Flags.IsReadOnly(),
+			writable: !n.isView && !req.Flags.IsReadOnly(),
 			append:   req.Flags&fuse.OpenAppend != 0,
 		}
 		return nil
@@ -449,7 +455,9 @@ func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
 // Symlink implements fs.NodeSymlinker.
 func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
-		if n.file.HasChild(req.NewName) {
+		if n.isView {
+			return fuse.EPERM
+		} else if n.file.HasChild(req.NewName) {
 			return fuse.EEXIST
 		}
 		f := n.file.New(&file.NewOptions{
@@ -466,7 +474,7 @@ func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.No
 		defer n.touchIfOK(nil)
 		n.file.Set(req.NewName, f)
 
-		fnode := Node{fs: n.fs, file: f}
+		fnode := Node{fs: n.fs, file: f, isView: n.isView || f.IsView()}
 		node = fnode
 		return nil
 	})
