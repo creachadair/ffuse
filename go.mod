@@ -7,7 +7,7 @@ require (
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/creachadair/badgerstore v0.0.6
-	github.com/creachadair/ffs v0.0.0-20200911182012-38402378c68a
+	github.com/creachadair/ffs v0.0.0-20200916045332-33ad94347b93
 	github.com/creachadair/getpass v0.1.0
 	github.com/creachadair/keyfile v0.3.0
 	github.com/dgraph-io/badger/v2 v2.0.3 // indirect
