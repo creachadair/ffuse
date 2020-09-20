@@ -9,7 +9,7 @@ require (
 	github.com/creachadair/badgerstore v0.0.6
 	github.com/creachadair/ffs v0.0.0-20200916045332-33ad94347b93
 	github.com/creachadair/getpass v0.1.0
-	github.com/creachadair/keyfile v0.3.0
+	github.com/creachadair/keyfile v0.4.2
 	github.com/dgraph-io/badger/v2 v2.0.3 // indirect
 	github.com/dgraph-io/ristretto v0.0.3 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
