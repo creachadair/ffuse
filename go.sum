@@ -25,8 +25,8 @@ github.com/creachadair/boltstore v0.0.0-20200926215448-c8b0f8cd826a h1:qXm2bwEpV
 github.com/creachadair/boltstore v0.0.0-20200926215448-c8b0f8cd826a/go.mod h1:4IVamEXqt8FyHoMJTGIhdN9igry/hW0RTlYCMwYZbNI=
 github.com/creachadair/ffs v0.0.0-20190826173232-ca263fb5bffc/go.mod h1:hg0Cpr+OA2VWLqznFeiop8u2I2PnEYbhKWej3BXN2pE=
 github.com/creachadair/ffs v0.0.0-20200926202826-66eeaa8e9e7d/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
-github.com/creachadair/ffs v0.0.0-20200926224219-48570a05dc23 h1:R1iNjBxAEt/38RcO2f7oHXT92RiP01LBUs2efBt4x0g=
-github.com/creachadair/ffs v0.0.0-20200926224219-48570a05dc23/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
+github.com/creachadair/ffs v0.0.0-20200926230147-2637505c61f6 h1:21VmGPaZEUM/u9LZAkgR82xp9xMQogxB6P91k79eSZk=
+github.com/creachadair/ffs v0.0.0-20200926230147-2637505c61f6/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
 github.com/creachadair/getpass v0.1.0 h1:L/bEjfydVpDLP+0VIqK9z4rFktOz/5hYBDVeyWe61zg=
 github.com/creachadair/getpass v0.1.0/go.mod h1:Wup04NkmcX+Af5Z2pt3FJFySTC7bs9PcsqS2zC2Ar7M=
 github.com/creachadair/keyfile v0.5.1 h1:7QTMQ6QaqpF7dSOrfxcrd6L+fsJZs6BKzsIqAB8+V+w=
