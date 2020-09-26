@@ -40,6 +40,12 @@ var (
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
+
+	stores = store.Registry{
+		"badger": badgerstore.Opener,
+		"file":   filestore.Opener,
+		"mem":    memstore.Opener,
+	}
 )
 
 func init() {
@@ -54,10 +60,6 @@ Options:
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
-
-	store.Default.Register("badger", badgerstore.Opener)
-	store.Default.Register("file", filestore.Opener)
-	store.Default.Register("mem", memstore.Opener)
 }
 
 func main() {
@@ -79,7 +81,7 @@ func main() {
 	ctx := context.Background()
 
 	// Set up the CAS for the filesystem.
-	s, err := store.Default.Open(ctx, *storeAddr)
+	s, err := stores.Open(ctx, *storeAddr)
 	if err != nil {
 		log.Fatalf("Opening blob storage: %v", err)
 	}
