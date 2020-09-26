@@ -110,16 +110,17 @@ func main() {
 	// Open an existing root, or start a fresh one.
 	var root *file.Root
 	if *doNew {
-		root = file.NewRoot(cas, *rootKey)
-		root.File().SetStat(func(s *file.Stat) {
-			s.Mode = os.ModeDir | 0755
+		root = file.NewRoot(cas, &file.NewOptions{
+			Stat: file.Stat{Mode: os.ModeDir | 0755},
 		})
 		log.Print("Creating empty filesystem root")
-	} else if r, err := file.OpenRoot(ctx, cas, *rootKey); err != nil {
+	} else if rk, err := cas.Get(ctx, *rootKey); err != nil {
+		log.Fatalf("Loading root key from %q: %v", *rootKey, err)
+	} else if r, err := file.OpenRoot(ctx, cas, string(rk)); err != nil {
 		log.Fatalf("Opening root %q: %v", *rootKey, err)
 	} else {
 		root = r
-		log.Printf("Loaded filesystem from %q", *rootKey)
+		log.Printf("Loaded filesystem from %q (%x)", *rootKey, string(rk))
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
@@ -171,7 +172,13 @@ func main() {
 	// At exit, flush and update the root pointer.
 	key, err := root.Flush(ctx)
 	if err != nil {
-		log.Fatalf("Flush error: %v", err)
+		log.Fatalf("Flushing root: %v", err)
+	} else if err := cas.Put(ctx, blob.PutOptions{
+		Key:     *rootKey,
+		Data:    []byte(key),
+		Replace: true,
+	}); err != nil {
+		log.Fatalf("Updating root pointer: %v", err)
 	}
 	fmt.Printf("%x\n", key)
 }
