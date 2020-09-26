@@ -110,15 +110,15 @@ func main() {
 	cas := blob.NewCAS(s, digest)
 
 	// Open an existing root, or start a fresh one.
-	var root *file.Root
+	var root *file.File
 	if *doNew {
-		root = file.NewRoot(cas, &file.NewOptions{
+		root = file.New(cas, &file.NewOptions{
 			Stat: file.Stat{Mode: os.ModeDir | 0755},
 		})
 		log.Print("Creating empty filesystem root")
 	} else if rk, err := cas.Get(ctx, *rootKey); err != nil {
 		log.Fatalf("Loading root key from %q: %v", *rootKey, err)
-	} else if r, err := file.OpenRoot(ctx, cas, string(rk)); err != nil {
+	} else if r, err := file.Open(ctx, cas, string(rk)); err != nil {
 		log.Fatalf("Opening root %q: %v", *rootKey, err)
 	} else {
 		root = r
