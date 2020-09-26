@@ -18,6 +18,7 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 	"github.com/creachadair/badgerstore"
+	"github.com/creachadair/boltstore"
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/blob/codecs/encrypted"
 	"github.com/creachadair/ffs/blob/encoded"
@@ -44,6 +45,7 @@ var (
 	stores = store.Registry{
 		"badger": badgerstore.Opener,
 		"file":   filestore.Opener,
+		"bolt":   boltstore.Opener,
 		"mem":    memstore.Opener,
 	}
 )
