@@ -29,9 +29,8 @@ import (
 	"github.com/creachadair/ffuse"
 	"github.com/creachadair/getpass"
 	"github.com/creachadair/keyfile"
+	"github.com/creachadair/sqlitestore"
 )
-
-// TODO: Add compression.
 
 var (
 	storeAddr  = flag.String("store", "", "Blob storage address (required)")
@@ -44,9 +43,10 @@ var (
 
 	stores = store.Registry{
 		"badger": badgerstore.Opener,
-		"file":   filestore.Opener,
 		"bolt":   boltstore.Opener,
+		"file":   filestore.Opener,
 		"mem":    memstore.Opener,
+		"sqlite": sqlitestore.Opener,
 	}
 )
 
