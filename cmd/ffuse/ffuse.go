@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/hmac"
-	"crypto/sha256"
 	"flag"
 	"fmt"
 	"hash"
@@ -30,6 +29,7 @@ import (
 	"github.com/creachadair/getpass"
 	"github.com/creachadair/keyfile"
 	"github.com/creachadair/sqlitestore"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -88,7 +88,7 @@ func main() {
 		log.Fatalf("Opening blob storage: %v", err)
 	}
 	defer blob.CloseStore(ctx, s)
-	digest := sha256.New
+	digest := sha3.New256
 
 	if *keyFile != "" {
 		pp, err := getpass.Prompt("Encryption passphrase: ")
@@ -105,7 +105,7 @@ func main() {
 		}
 		s = encoded.New(s, encrypted.New(c, nil))
 		digest = func() hash.Hash {
-			return hmac.New(sha256.New, key)
+			return hmac.New(sha3.New256, key)
 		}
 		log.Printf("Enabled encryption with keyfile %q", *keyFile)
 	}
