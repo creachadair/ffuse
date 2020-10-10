@@ -26,6 +26,7 @@ import (
 	"github.com/creachadair/ffs/blob/store"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffuse"
+	"github.com/creachadair/gcsstore"
 	"github.com/creachadair/getpass"
 	"github.com/creachadair/keyfile"
 	"github.com/creachadair/sqlitestore"
@@ -45,6 +46,7 @@ var (
 		"badger": badgerstore.Opener,
 		"bolt":   boltstore.Opener,
 		"file":   filestore.Opener,
+		"gcs":    gcsstore.Opener,
 		"mem":    memstore.Opener,
 		"sqlite": sqlitestore.Opener,
 	}
