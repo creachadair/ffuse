@@ -8,7 +8,7 @@ require (
 	bazil.org/fuse v0.0.0-20200524192727-fb710f7dfd05
 	github.com/creachadair/badgerstore v0.0.7
 	github.com/creachadair/boltstore v0.0.0-20201003170606-ae1eaff430c7
-	github.com/creachadair/ffs v0.0.0-20201010032336-806306054c66
+	github.com/creachadair/ffs v0.0.0-20201011050051-5b685b7421b2
 	github.com/creachadair/gcsstore v0.0.0-20201010171844-b3686d41d7de
 	github.com/creachadair/getpass v0.1.1
 	github.com/creachadair/keyfile v0.5.3

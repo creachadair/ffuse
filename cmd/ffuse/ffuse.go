@@ -19,6 +19,7 @@ import (
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/boltstore"
 	"github.com/creachadair/ffs/blob"
+	"github.com/creachadair/ffs/blob/cachestore"
 	"github.com/creachadair/ffs/blob/codecs/encrypted"
 	"github.com/creachadair/ffs/blob/encoded"
 	"github.com/creachadair/ffs/blob/filestore"
@@ -41,6 +42,7 @@ var (
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
+	cacheSize  = flag.Int("cachesize", 0, "Memory cache size in KiB (0 for no cache)")
 
 	stores = store.Registry{
 		"badger": badgerstore.Opener,
@@ -88,6 +90,9 @@ func main() {
 	s, err := stores.Open(ctx, *storeAddr)
 	if err != nil {
 		log.Fatalf("Opening blob storage: %v", err)
+	} else if *cacheSize > 0 {
+		s = cachestore.New(s, *cacheSize<<10)
+		log.Printf("Enabled memory cache at %d KiB", *cacheSize<<10)
 	}
 	defer blob.CloseStore(ctx, s)
 	digest := sha3.New256

@@ -75,6 +75,8 @@ github.com/creachadair/ffs v0.0.0-20201003163401-61da5edfd92c h1:dKzKTC1sklboUzv
 github.com/creachadair/ffs v0.0.0-20201003163401-61da5edfd92c/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
 github.com/creachadair/ffs v0.0.0-20201010032336-806306054c66 h1:V9E2AwSPZ1CXDfLDHCQvy955AMJliEyhKLK/z6H2Im0=
 github.com/creachadair/ffs v0.0.0-20201010032336-806306054c66/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
+github.com/creachadair/ffs v0.0.0-20201011050051-5b685b7421b2 h1:zMwtWpEakoF2zWO4bB8Wd8/BtuW39b7vKV6mo4F74VY=
+github.com/creachadair/ffs v0.0.0-20201011050051-5b685b7421b2/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
 github.com/creachadair/gcsstore v0.0.0-20201010171844-b3686d41d7de h1:Zlqpe6m0tq+E1pMzYXa+Ingi/EWj0CI4SXI09C3CExM=
 github.com/creachadair/gcsstore v0.0.0-20201010171844-b3686d41d7de/go.mod h1:+Znp6wR7dULK9AxUbmPBGOl4Ku46nsY9Eh16fVGMrvA=
 github.com/creachadair/getpass v0.1.1 h1:NBy01Vx3sEG75JbSgjsObwe06ISDJL9WS88pFNnVSpg=
