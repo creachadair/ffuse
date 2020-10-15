@@ -1,14 +1,13 @@
 package main
 
 import (
-	"io"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"github.com/creachadair/ffs/file/wirepb"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
+	"github.com/creachadair/binpack"
+	"github.com/creachadair/ffs/file/wiretype"
 )
 
 func main() {
@@ -16,9 +15,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Read: %v", err)
 	}
-	var pb wirepb.Node
-	if err := proto.Unmarshal(data, &pb); err != nil {
+	var pb wiretype.Node
+	if err := binpack.Unmarshal(data, &pb); err != nil {
 		log.Fatalf("Decode: %v", err)
 	}
-	io.WriteString(os.Stdout, protojson.Format(&pb))
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	enc.Encode(&pb)
 }
