@@ -69,6 +69,8 @@ github.com/creachadair/badgerstore v0.0.7 h1:Z/Kdoos/1fQXqw9UwZcNx69FycO0GNXvlAC
 github.com/creachadair/badgerstore v0.0.7/go.mod h1:Srg4c3mUs07Y5rFh4p5oxY26azhbmn+3JOI4J0+aqto=
 github.com/creachadair/binpack v0.0.5 h1:+KhcAkJ7uLVcaPmYG5CdB1qSHj6GVd6RhMs/au7nFIY=
 github.com/creachadair/binpack v0.0.5/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5oiMtikDJTd8=
+github.com/creachadair/binpack v0.0.6 h1:aB8b/CtQQWi25ZHeLHJkZ6kwEtdlloxY2L1jg6WoANk=
+github.com/creachadair/binpack v0.0.6/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5oiMtikDJTd8=
 github.com/creachadair/boltstore v0.0.0-20201003170606-ae1eaff430c7 h1:zB7CsI5Zy/N3DB1WSCyT2RCj99V6wBkINFVkMkcBAQc=
 github.com/creachadair/boltstore v0.0.0-20201003170606-ae1eaff430c7/go.mod h1:cb4ZTPJA0+SShQbD3muK83gRE1kRXluzTbLhYDzKnhc=
 github.com/creachadair/ffs v0.0.0-20201001165948-38dc36928df1 h1:0E3S8oJO0SG3vdnh6eiJ6h3ZCCWbtAvndMAPlv6k1WU=
