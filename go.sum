@@ -67,8 +67,6 @@ github.com/creachadair/atomicfile v0.2.1 h1:lR7a+aLj4eeIM3ihqozxEoxjT6MUY9XXAhtZ
 github.com/creachadair/atomicfile v0.2.1/go.mod h1:Tvr/wsb3lQY4dj+9utcmJ7Gp6wi3LKA8jRNqoxUhA2M=
 github.com/creachadair/badgerstore v0.0.7 h1:Z/Kdoos/1fQXqw9UwZcNx69FycO0GNXvlACax96BzBk=
 github.com/creachadair/badgerstore v0.0.7/go.mod h1:Srg4c3mUs07Y5rFh4p5oxY26azhbmn+3JOI4J0+aqto=
-github.com/creachadair/binpack v0.0.5 h1:+KhcAkJ7uLVcaPmYG5CdB1qSHj6GVd6RhMs/au7nFIY=
-github.com/creachadair/binpack v0.0.5/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5oiMtikDJTd8=
 github.com/creachadair/binpack v0.0.6 h1:aB8b/CtQQWi25ZHeLHJkZ6kwEtdlloxY2L1jg6WoANk=
 github.com/creachadair/binpack v0.0.6/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5oiMtikDJTd8=
 github.com/creachadair/boltstore v0.0.0-20201003170606-ae1eaff430c7 h1:zB7CsI5Zy/N3DB1WSCyT2RCj99V6wBkINFVkMkcBAQc=
@@ -79,8 +77,8 @@ github.com/creachadair/ffs v0.0.0-20201003163401-61da5edfd92c h1:dKzKTC1sklboUzv
 github.com/creachadair/ffs v0.0.0-20201003163401-61da5edfd92c/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
 github.com/creachadair/ffs v0.0.0-20201010032336-806306054c66 h1:V9E2AwSPZ1CXDfLDHCQvy955AMJliEyhKLK/z6H2Im0=
 github.com/creachadair/ffs v0.0.0-20201010032336-806306054c66/go.mod h1:SzgjluEgqkthDTojTxgWWhqVqTSUT9Nm1DhApcIclrg=
-github.com/creachadair/ffs v0.0.0-20201015191246-87398426b0b0 h1:XuZJP4Ib+8KrDOCk2lSAkxMJD7eiDiBDivqJlNsddG0=
-github.com/creachadair/ffs v0.0.0-20201015191246-87398426b0b0/go.mod h1:x7VE7rftJXeH02cqPPr6fhviQCY0EoUn41jDNL7bIdo=
+github.com/creachadair/ffs v0.0.0-20201016181435-0d4dccf55695 h1:Ni4cczi1a7YWz+aKFWRCS6IQVJ1wZa8FtTgCM6ocGbI=
+github.com/creachadair/ffs v0.0.0-20201016181435-0d4dccf55695/go.mod h1:5v23PnA3WpZB65GQoVZd+GiSmdJnuDzSiogWpD1OGAE=
 github.com/creachadair/gcsstore v0.0.0-20201010171844-b3686d41d7de h1:Zlqpe6m0tq+E1pMzYXa+Ingi/EWj0CI4SXI09C3CExM=
 github.com/creachadair/gcsstore v0.0.0-20201010171844-b3686d41d7de/go.mod h1:+Znp6wR7dULK9AxUbmPBGOl4Ku46nsY9Eh16fVGMrvA=
 github.com/creachadair/getpass v0.1.1 h1:NBy01Vx3sEG75JbSgjsObwe06ISDJL9WS88pFNnVSpg=
