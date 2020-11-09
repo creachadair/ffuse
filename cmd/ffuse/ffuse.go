@@ -3,12 +3,10 @@ package main
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/hmac"
 	"flag"
 	"fmt"
-	"hash"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,22 +14,12 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
-	"github.com/creachadair/badgerstore"
-	"github.com/creachadair/boltstore"
 	"github.com/creachadair/ffs/blob"
-	"github.com/creachadair/ffs/blob/cachestore"
-	"github.com/creachadair/ffs/blob/codecs/encrypted"
-	"github.com/creachadair/ffs/blob/encoded"
-	"github.com/creachadair/ffs/blob/filestore"
-	"github.com/creachadair/ffs/blob/memstore"
-	"github.com/creachadair/ffs/blob/store"
+	"github.com/creachadair/ffs/blob/rpcstore"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffuse"
-	"github.com/creachadair/gcsstore"
-	"github.com/creachadair/getpass"
-	"github.com/creachadair/keyfile"
-	"github.com/creachadair/sqlitestore"
-	"golang.org/x/crypto/sha3"
+	"github.com/creachadair/jrpc2"
+	"github.com/creachadair/jrpc2/channel"
 )
 
 var (
@@ -41,17 +29,6 @@ var (
 	doNew      = flag.Bool("new", false, "Create a new empty filesystem root")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
-	keyFile    = flag.String("keyfile", os.Getenv("KEYFILE_PATH"), "Path of encryption key file")
-	cacheSize  = flag.Int("cachesize", 0, "Memory cache size in KiB (0 for no cache)")
-
-	stores = store.Registry{
-		"badger": badgerstore.Opener,
-		"bolt":   boltstore.Opener,
-		"file":   filestore.Opener,
-		"gcs":    gcsstore.Opener,
-		"mem":    memstore.Opener,
-		"sqlite": sqlitestore.Opener,
-	}
 )
 
 func init() {
@@ -72,6 +49,7 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 	log.SetPrefix("[ffuse] ")
+	var copts jrpc2.ClientOptions
 	switch {
 	case *storeAddr == "":
 		log.Fatal("You must set a non-empty -store address")
@@ -82,41 +60,19 @@ func main() {
 	case *doDebug:
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
 		log.Print("Enabled FUSE debug logging")
+		copts.Logger = log.New(os.Stderr, "[rpcstore] ", log.LstdFlags)
+		log.Print("Enabled storage client logging")
 	}
 
 	ctx := context.Background()
 
 	// Set up the CAS for the filesystem.
-	s, err := stores.Open(ctx, *storeAddr)
+	conn, err := net.Dial(jrpc2.Network(*storeAddr), *storeAddr)
 	if err != nil {
-		log.Fatalf("Opening blob storage: %v", err)
-	} else if *cacheSize > 0 {
-		s = cachestore.New(s, *cacheSize<<10)
-		log.Printf("Enabled memory cache at %d KiB", *cacheSize<<10)
+		log.Fatalf("Dialing blob server: %v", err)
 	}
-	defer blob.CloseStore(ctx, s)
-	digest := sha3.New256
-
-	if *keyFile != "" {
-		pp, err := getpass.Prompt("Encryption passphrase: ")
-		if err != nil {
-			log.Fatalf("Reading passphrase: %v", err)
-		}
-		key, err := keyfile.LoadKey(os.ExpandEnv(*keyFile), pp)
-		if err != nil {
-			log.Fatalf("Loading encryption key: %v", err)
-		}
-		c, err := aes.NewCipher(key)
-		if err != nil {
-			log.Fatalf("Creating cipher: %v", err)
-		}
-		s = encoded.New(s, encrypted.New(c, nil))
-		digest = func() hash.Hash {
-			return hmac.New(sha3.New256, key)
-		}
-		log.Printf("Enabled encryption with keyfile %q", *keyFile)
-	}
-	cas := blob.NewCAS(s, digest)
+	defer conn.Close()
+	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), &copts), nil)
 
 	// Open an existing root, or start a fresh one.
 	var root *file.File
