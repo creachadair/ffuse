@@ -8,8 +8,8 @@ github.com/creachadair/atomicfile v0.2.1 h1:lR7a+aLj4eeIM3ihqozxEoxjT6MUY9XXAhtZ
 github.com/creachadair/atomicfile v0.2.1/go.mod h1:Tvr/wsb3lQY4dj+9utcmJ7Gp6wi3LKA8jRNqoxUhA2M=
 github.com/creachadair/binpack v0.0.7 h1:Uv6TXQo1PL++63kzR45ENVQUFYy9vdUNpx7ENXIcf3k=
 github.com/creachadair/binpack v0.0.7/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5oiMtikDJTd8=
-github.com/creachadair/ffs v0.0.0-20201127193927-a8be2278214a h1:rn2bBSPROKFjp8oJ3veuLEF+AKB8dHMnwkzn9b3bm2k=
-github.com/creachadair/ffs v0.0.0-20201127193927-a8be2278214a/go.mod h1:ygEDp+X6vn6h14Y2yk9fX5THrhVoBCrN8PnhTcoPKss=
+github.com/creachadair/ffs v0.0.0-20201208212406-ec6b9fac2271 h1:z8Vo2otwqSmS246YbEjbB9GvA6YxDDOoRz+am8A9wus=
+github.com/creachadair/ffs v0.0.0-20201208212406-ec6b9fac2271/go.mod h1:ZAsF6LrQdPmvgHean88hAOi13R6Xre5mB0nXPzaohF0=
 github.com/creachadair/jrpc2 v0.11.1 h1:6K5X7D7RUESJo8C9qzNaxeousZsp0+Y7S+pU2y3PSfw=
 github.com/creachadair/jrpc2 v0.11.1/go.mod h1:3bmpl8Re0jezHL05J9v1Jt++37WMVcNXfnCE3hdqNzY=
 github.com/creachadair/staticfile v0.1.3/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
@@ -18,6 +18,8 @@ github.com/golang/snappy v0.0.2/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEW
 github.com/google/go-cmp v0.5.1/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.2 h1:X2ev0eStA3AbceY54o37/0PQ/UWqKEiiO2dKL5OPaFM=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/google/go-cmp v0.5.4 h1:L8R9j+yAqZuZjsqh/z+F1NCffTKKLShY6zXTItVIZ8M=
+github.com/google/go-cmp v0.5.4/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c h1:u6SKchux2yDvFQnDHS3lPnIRmfVJ5Sxy3ao2SIdysLQ=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c/go.mod h1:hzIxponao9Kjc7aWznkXaL4U4TWaDSs8zcsY4Ka08nM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9 h1:SQFwaSi55rU7vdNs9Yr0Z324VNlrF+0wMqRXT4St8ck=
