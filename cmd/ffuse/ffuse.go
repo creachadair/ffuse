@@ -15,11 +15,11 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 	"github.com/creachadair/ffs/blob"
-	"github.com/creachadair/ffs/blob/rpcstore"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffuse"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
+	"github.com/creachadair/rpcstore"
 )
 
 var (
