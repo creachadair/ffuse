@@ -9,6 +9,6 @@ require (
 	github.com/creachadair/binpack v0.0.8
 	github.com/creachadair/ffs v0.0.0-20210330135354-d2fe618a7bf6
 	github.com/creachadair/jrpc2 v0.19.1
-	github.com/creachadair/rpcstore v0.0.0-20210212170421-ab45512f6769
+	github.com/creachadair/rpcstore v0.0.0-20210729232110-f221ddd350a0
 	golang.org/x/sys v0.0.0-20201107080550-4d91cf3a1aaf // indirect
 )
