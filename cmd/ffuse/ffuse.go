@@ -67,7 +67,7 @@ func main() {
 	ctx := context.Background()
 
 	// Set up the CAS for the filesystem.
-	conn, err := net.Dial(jrpc2.Network(*storeAddr), *storeAddr)
+	conn, err := net.Dial(jrpc2.Network(*storeAddr))
 	if err != nil {
 		log.Fatalf("Dialing blob server: %v", err)
 	}
