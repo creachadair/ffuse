@@ -90,7 +90,7 @@ func (n Node) fillAttr(attr *fuse.Attr) {
 	attr.Gid = uint32(s.GroupID)
 	attr.Nlink = 1
 	if s.Mode.IsDir() {
-		attr.Nlink = uint32(2 + len(n.file.Children()))
+		attr.Nlink = uint32(2 + n.file.Child().Len())
 	}
 }
 
@@ -123,7 +123,7 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 					GroupID: int(req.Gid),
 				},
 			})
-			n.file.Set(req.Name, f)
+			n.file.Child().Set(req.Name, f)
 		}
 		defer n.touchIfOK(nil)
 
@@ -203,14 +203,14 @@ func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse
 // Link implements fs.NodeLinker.
 func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
-		if n.file.HasChild(req.NewName) {
+		if n.file.Child().Has(req.NewName) {
 			return fuse.EEXIST
 		}
 		tgt := old.(Node)
 		if tgt.file.Stat().Mode.IsDir() {
 			return fuse.EPERM
 		}
-		n.file.Set(req.NewName, tgt.file)
+		n.file.Child().Set(req.NewName, tgt.file)
 		node = tgt
 		defer n.touchIfOK(nil)
 		return nil
@@ -263,7 +263,7 @@ func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.Loo
 // Mkdir implements fs.NodeMkdirer.
 func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
-		if n.file.HasChild(req.Name) {
+		if n.file.Child().Has(req.Name) {
 			return fuse.EEXIST
 		}
 		defer n.touchIfOK(nil)
@@ -276,7 +276,7 @@ func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, 
 				GroupID: int(req.Gid),
 			},
 		})
-		n.file.Set(req.Name, f)
+		n.file.Child().Set(req.Name, f)
 		node = Node{fs: n.fs, file: f}
 		return nil
 	})
@@ -322,13 +322,13 @@ func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 		if f.Stat().Mode.IsDir() {
 			if !req.Dir {
 				return fuse.EPERM // unlink(directory)
-			} else if len(f.Children()) != 0 {
+			} else if f.Child().Len() != 0 {
 				return fuse.Errno(syscall.ENOTEMPTY)
 			}
 		} else if req.Dir {
 			return fuse.EPERM // rmdir(non-directory)
 		}
-		n.file.Remove(req.Name)
+		n.file.Child().Remove(req.Name)
 		return nil
 	})
 }
@@ -377,14 +377,14 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 
 			// Remove the existing file from the target location.
 			defer dir.touchIfOK(nil)
-			dir.file.Remove(req.NewName)
+			dir.file.Child().Remove(req.NewName)
 		} else if !errors.Is(err, file.ErrChildNotFound) {
 			return err
 		}
 
 		defer n.touchIfOK(nil)
-		n.file.Remove(req.OldName)     // remove from the old directory
-		dir.file.Set(req.NewName, src) // add to the new directory
+		n.file.Child().Remove(req.OldName)     // remove from the old directory
+		dir.file.Child().Set(req.NewName, src) // add to the new directory
 		return nil
 	})
 }
@@ -449,7 +449,7 @@ func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
 // Symlink implements fs.NodeSymlinker.
 func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.Node, err error) {
 	err = n.writeLock(func() error {
-		if n.file.HasChild(req.NewName) {
+		if n.file.Child().Has(req.NewName) {
 			return fuse.EEXIST
 		}
 		f := n.file.New(&file.NewOptions{
@@ -464,7 +464,7 @@ func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.No
 			return err
 		}
 		defer n.touchIfOK(nil)
-		n.file.Set(req.NewName, f)
+		n.file.Child().Set(req.NewName, f)
 
 		fnode := Node{fs: n.fs, file: f}
 		node = fnode
@@ -538,7 +538,7 @@ func (h Handle) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	// N.B. This requires a write lock because paging in children updates caches.
 	var elts []fuse.Dirent
 	err := h.writeLock(func() error {
-		for _, name := range h.file.Children() {
+		for _, name := range h.file.Child().Names() {
 			kid, err := h.file.Open(ctx, name)
 			if err != nil {
 				return err
