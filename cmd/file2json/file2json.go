@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/creachadair/binpack"
 	"github.com/creachadair/ffs/file/wiretype"
+	"google.golang.org/protobuf/proto"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		log.Fatalf("Read: %v", err)
 	}
 	var pb wiretype.Node
-	if err := binpack.Unmarshal(data, &pb); err != nil {
+	if err := proto.Unmarshal(data, &pb); err != nil {
 		log.Fatalf("Decode: %v", err)
 	}
 	enc := json.NewEncoder(os.Stdout)
