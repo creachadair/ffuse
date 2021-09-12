@@ -98,9 +98,9 @@ func (n Node) fillAttr(attr *fuse.Attr) {
 // The caller must hold the filesystem write lock.
 func (n Node) touchIfOK(err error) {
 	if err == nil {
-		stat := n.file.Stat()
-		stat.ModTime = time.Now()
-		stat.Update()
+		n.file.Stat().Edit(func(stat *file.Stat) {
+			stat.ModTime = time.Now()
+		}).Update()
 	}
 }
 
@@ -403,23 +403,23 @@ func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.S
 				return err
 			}
 		}
-		s := n.file.Stat()
-		if req.Valid.Gid() {
-			s.GroupID = int(req.Gid)
-		}
-		if req.Valid.Mode() {
-			s.Mode = req.Mode
-		}
-		if req.Valid.Mtime() {
-			s.ModTime = req.Mtime
-		}
-		if req.Valid.MtimeNow() {
-			s.ModTime = time.Now()
-		}
-		if req.Valid.Uid() {
-			s.OwnerID = int(req.Uid)
-		}
-		s.Update()
+		n.file.Stat().Edit(func(s *file.Stat) {
+			if req.Valid.Gid() {
+				s.GroupID = int(req.Gid)
+			}
+			if req.Valid.Mode() {
+				s.Mode = req.Mode
+			}
+			if req.Valid.Mtime() {
+				s.ModTime = req.Mtime
+			}
+			if req.Valid.MtimeNow() {
+				s.ModTime = time.Now()
+			}
+			if req.Valid.Uid() {
+				s.OwnerID = int(req.Uid)
+			}
+		}).Update()
 		n.fillAttr(&rsp.Attr)
 		return nil
 	})
