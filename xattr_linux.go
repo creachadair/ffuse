@@ -3,7 +3,7 @@ package ffuse
 import (
 	"syscall"
 
-	"bazil.org/fuse"
+	"github.com/seaweedfs/fuse"
 )
 
 // Symbolic constants for extended attributes, Linux version.

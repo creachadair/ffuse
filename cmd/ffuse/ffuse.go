@@ -12,14 +12,15 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"bazil.org/fuse"
-	"bazil.org/fuse/fs"
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffuse"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/rpcstore"
+
+	"github.com/seaweedfs/fuse"
+	"github.com/seaweedfs/fuse/fs"
 )
 
 var (

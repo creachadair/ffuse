@@ -1,6 +1,6 @@
 // Package ffuse implements a FUSE filesystem driver backed by the flexible
 // filesystem package (bitbucket.org/creachadair/ffs). It is compatible with
-// the bazil.org/fuse and bazil.org/fuse/fs packages.
+// the github.com/seaweedfs/fuse and github.com/seaweedfs/fuse/fs packages.
 package ffuse
 
 import (
@@ -14,9 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	"bazil.org/fuse"
-	"bazil.org/fuse/fs"
 	"github.com/creachadair/ffs/file"
+	"github.com/seaweedfs/fuse"
+	"github.com/seaweedfs/fuse/fs"
 )
 
 // New constructs a new FS with the given root file.  The resulting value safe
