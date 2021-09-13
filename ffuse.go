@@ -19,9 +19,8 @@ import (
 	"github.com/seaweedfs/fuse/fs"
 )
 
-// New constructs a new FS with the given root file.  The resulting value safe
-// for concurrent use by multiple goroutines.
-// An *FS implements the bazil.org/fuse/fs.FS interface.
+// New constructs a new FS with the given root file.  The resulting value is
+// safe for concurrent use by multiple goroutines.
 func New(root *file.File) *FS { return &FS{root: root} }
 
 // FS implements the fs.FS interface.
@@ -37,7 +36,7 @@ type FS struct {
 func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root}, nil }
 
 // A Node implements the fs.Node interface along with other node-related
-// interfaces from the bazil.org/fuse/fs package.
+// interfaces from the github.com/seaweedfs/fuse/fs package.
 type Node struct {
 	fs   *FS
 	file *file.File
