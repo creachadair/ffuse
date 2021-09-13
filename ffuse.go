@@ -118,7 +118,7 @@ func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.Cre
 			// The file doesn't exist; create a new empty file or directory.
 			f = n.file.New(&file.NewOptions{
 				Name: req.Name,
-				Stat: file.Stat{
+				Stat: &file.Stat{
 					Mode:    req.Mode,
 					OwnerID: int(req.Uid),
 					GroupID: int(req.Gid),
@@ -270,7 +270,7 @@ func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, 
 		defer n.touchIfOK(nil)
 		f := n.file.New(&file.NewOptions{
 			Name: req.Name,
-			Stat: file.Stat{
+			Stat: &file.Stat{
 				Mode:    req.Mode,
 				ModTime: time.Now(),
 				OwnerID: int(req.Uid),
@@ -455,7 +455,7 @@ func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.No
 		}
 		f := n.file.New(&file.NewOptions{
 			Name: req.NewName,
-			Stat: file.Stat{
+			Stat: &file.Stat{
 				Mode:    os.ModeSymlink | 0555,
 				OwnerID: int(req.Uid),
 				GroupID: int(req.Gid),

@@ -79,7 +79,7 @@ func main() {
 	var root *file.File
 	if *doNew {
 		root = file.New(cas, &file.NewOptions{
-			Stat: file.Stat{Mode: os.ModeDir | 0755},
+			Stat: &file.Stat{Mode: os.ModeDir | 0755},
 		})
 		log.Print("Creating empty filesystem root")
 	} else if rk, err := cas.Get(ctx, *rootKey); err != nil {
