@@ -1,8 +1,8 @@
 github.com/creachadair/atomicfile v0.2.1/go.mod h1:Tvr/wsb3lQY4dj+9utcmJ7Gp6wi3LKA8jRNqoxUhA2M=
 github.com/creachadair/binpack v0.0.8/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5oiMtikDJTd8=
 github.com/creachadair/ffs v0.0.0-20210330135354-d2fe618a7bf6/go.mod h1:TI57Xw3ZxotzY1I8y8gAcg2f1q6Ub57QI/Uq9k2fPFM=
-github.com/creachadair/ffs v0.0.0-20210914003930-a4e092e347c1 h1:stNmsJnX1YCy9uTLXftWbVCecxhSzuUb5Hw/4Iothbs=
-github.com/creachadair/ffs v0.0.0-20210914003930-a4e092e347c1/go.mod h1:CSnP5V18bT/O59GgdLDcoir8FpeLjW7i8l6tOh+UMAE=
+github.com/creachadair/ffs v0.0.0-20210914041626-4ad3165365c7 h1:lFRUb81j43HZFK/WU0SgJ3AQlcQ77/RqsLbPfDx9pzo=
+github.com/creachadair/ffs v0.0.0-20210914041626-4ad3165365c7/go.mod h1:CSnP5V18bT/O59GgdLDcoir8FpeLjW7i8l6tOh+UMAE=
 github.com/creachadair/jrpc2 v0.20.0/go.mod h1:9I7IHMxj2i2AY3Ee1G0lIB82xUT52MIJB8W/GxbQe5s=
 github.com/creachadair/jrpc2 v0.25.0 h1:FS9T2dotxgfEJCDAhG/dYmowJb+69RDCBnJwI9JsTT0=
 github.com/creachadair/jrpc2 v0.25.0/go.mod h1:w+GXZGc+NwsH0xsUOgeLBIIRM0jBOSTXhv28KaWGRZU=
