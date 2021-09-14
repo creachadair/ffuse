@@ -1,3 +1,5 @@
+// Copyright (C) 2019 Michael J. Fromberger. All Rights Reserved.
+
 package main
 
 import (

@@ -1,3 +1,5 @@
+// Copyright (C) 2019 Michael J. Fromberger. All Rights Reserved.
+
 // Package ffuse implements a FUSE filesystem driver backed by the flexible
 // filesystem package (bitbucket.org/creachadair/ffs). It is compatible with
 // the github.com/seaweedfs/fuse and github.com/seaweedfs/fuse/fs packages.
