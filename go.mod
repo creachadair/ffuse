@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210817142637-7d9622a276b7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect

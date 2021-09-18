@@ -14,8 +14,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
+	"github.com/creachadair/ffs/file/root"
 	"github.com/creachadair/ffuse"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
@@ -29,7 +29,7 @@ var (
 	storeAddr  = flag.String("store", "", "Blob storage address (required)")
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
-	doNew      = flag.Bool("new", false, "Create a new empty filesystem root")
+	doNew      = flag.String("new", "", "Create a new empty filesystem root with this description")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 )
@@ -77,24 +77,31 @@ func main() {
 	defer conn.Close()
 	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), &copts), nil)
 
-	// Open an existing root, or start a fresh one.
-	var root *file.File
-	if *doNew {
-		root = file.New(cas, &file.NewOptions{
+	var rootPointer *root.Root
+	var rootFile *file.File
+	if *doNew != "" {
+		rootPointer = root.New(cas, &root.Options{
+			Description: *doNew,
+		})
+		rootFile = file.New(cas, &file.NewOptions{
 			Stat: &file.Stat{Mode: os.ModeDir | 0755},
 		})
-		log.Print("Creating empty filesystem root")
-	} else if rk, err := cas.Get(ctx, *rootKey); err != nil {
-		log.Fatalf("Loading root key from %q: %v", *rootKey, err)
-	} else if r, err := file.Open(ctx, cas, string(rk)); err != nil {
-		log.Fatalf("Opening root %q: %v", *rootKey, err)
+		log.Printf("Creating empty filesystem root (%s)", *doNew)
+	} else if rp, err := root.Open(ctx, cas, *rootKey); err != nil {
+		log.Fatalf("Loading root pointer from %q: %v", *rootKey, err)
+	} else if rf, err := file.Open(ctx, cas, rp.FileKey); err != nil {
+		log.Fatalf("Opening root file %q: %v", rp.FileKey, err)
 	} else {
-		root = r
-		log.Printf("Loaded filesystem from %q (%x)", *rootKey, string(rk))
+		rootPointer = rp
+		rootFile = rf
+		log.Printf("Loaded filesystem from %q (%x)", *rootKey, rp.FileKey)
+		if rp.Description != "" {
+			log.Printf("| %s", rp.Description)
+		}
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
-	server := ffuse.New(root)
+	server := ffuse.New(rootFile)
 	opts := []fuse.MountOption{
 		fuse.FSName("ffs"),
 		fuse.Subtype("ffs"),
@@ -140,14 +147,12 @@ func main() {
 	}
 
 	// At exit, flush and update the root pointer.
-	key, err := root.Flush(ctx)
+	key, err := rootFile.Flush(ctx)
 	if err != nil {
 		log.Fatalf("Flushing root: %v", err)
-	} else if err := cas.Put(ctx, blob.PutOptions{
-		Key:     *rootKey,
-		Data:    []byte(key),
-		Replace: true,
-	}); err != nil {
+	}
+	rootPointer.FileKey = key
+	if err := rootPointer.Save(ctx, *rootKey); err != nil {
 		log.Fatalf("Updating root pointer: %v", err)
 	}
 	fmt.Printf("%x\n", key)
