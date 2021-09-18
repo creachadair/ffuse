@@ -83,20 +83,19 @@ func main() {
 		rootPointer = root.New(cas, &root.Options{
 			Description: *doNew,
 		})
-		rootFile = file.New(cas, &file.NewOptions{
+		rootFile = rootPointer.NewFile(&file.NewOptions{
 			Stat: &file.Stat{Mode: os.ModeDir | 0755},
 		})
 		log.Printf("Creating empty filesystem root (%s)", *doNew)
-	} else if rp, err := root.Open(ctx, cas, *rootKey); err != nil {
+	} else if rootPointer, err = root.Open(ctx, cas, *rootKey); err != nil {
 		log.Fatalf("Loading root pointer from %q: %v", *rootKey, err)
-	} else if rf, err := file.Open(ctx, cas, rp.FileKey); err != nil {
-		log.Fatalf("Opening root file %q: %v", rp.FileKey, err)
+	} else if rootFile, err = rootPointer.File(ctx); err != nil {
+		log.Fatalf("Loading root file: %v", err)
 	} else {
-		rootPointer = rp
-		rootFile = rf
-		log.Printf("Loaded filesystem from %q (%x)", *rootKey, rp.FileKey)
-		if rp.Description != "" {
-			log.Printf("| %s", rp.Description)
+		fkey, _ := rootFile.Flush(ctx)
+		log.Printf("Loaded filesystem from %q (%x)", *rootKey, fkey)
+		if rootPointer.Description != "" {
+			log.Printf("| Description: %s", rootPointer.Description)
 		}
 	}
 
@@ -151,7 +150,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Flushing root: %v", err)
 	}
-	rootPointer.FileKey = key
 	if err := rootPointer.Save(ctx, *rootKey); err != nil {
 		log.Fatalf("Updating root pointer: %v", err)
 	}
