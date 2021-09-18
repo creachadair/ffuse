@@ -88,7 +88,7 @@ func main() {
 		})
 		log.Printf("Creating empty filesystem root (%s)", *doNew)
 	} else if rootPointer, err = root.Open(ctx, cas, *rootKey); err != nil {
-		log.Fatalf("Loading root pointer from %q: %v", *rootKey, err)
+		log.Fatalf("Loading root pointer: %v", err)
 	} else if rootFile, err = rootPointer.File(ctx); err != nil {
 		log.Fatalf("Loading root file: %v", err)
 	} else {
