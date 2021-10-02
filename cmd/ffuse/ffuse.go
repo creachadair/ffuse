@@ -56,7 +56,7 @@ func main() {
 	switch {
 	case *storeAddr == "":
 		log.Fatal("You must set a non-empty -store address")
-	case *mountPoint == "":
+	case *mountPoint == "" && *doNew == "":
 		log.Fatal("You must set a non-empty -mount path")
 	case *rootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
@@ -87,6 +87,8 @@ func main() {
 			Stat: &file.Stat{Mode: os.ModeDir | 0755},
 		})
 		log.Printf("Creating empty filesystem root (%s)", *doNew)
+		flushRoot(ctx, rootFile, rootPointer)
+		return
 	} else if rootPointer, err = root.Open(ctx, cas, *rootKey); err != nil {
 		log.Fatalf("Loading root pointer: %v", err)
 	} else if rootFile, err = rootPointer.File(ctx); err != nil {
@@ -144,13 +146,16 @@ func main() {
 	} else {
 		log.Print("Closed fuse connection")
 	}
+	flushRoot(ctx, rootFile, rootPointer)
+}
 
+func flushRoot(ctx context.Context, rf *file.File, rp *root.Root) {
 	// At exit, flush and update the root pointer.
-	key, err := rootFile.Flush(ctx)
+	key, err := rf.Flush(ctx)
 	if err != nil {
 		log.Fatalf("Flushing root: %v", err)
 	}
-	if err := rootPointer.Save(ctx, *rootKey); err != nil {
+	if err := rp.Save(ctx, *rootKey); err != nil {
 		log.Fatalf("Updating root pointer: %v", err)
 	}
 	fmt.Printf("%x\n", key)
