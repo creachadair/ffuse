@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	storeAddr  = flag.String("store", "", "Blob storage address (required)")
+	storeAddr  = flag.String("store", os.Getenv("BLOB_STORE"), "Blob storage address (required)")
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
 	doNew      = flag.String("new", "", "Create a new empty filesystem root with this description")
