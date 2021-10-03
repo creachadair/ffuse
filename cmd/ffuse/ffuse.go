@@ -30,6 +30,7 @@ var (
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
 	doNew      = flag.String("new", "", "Create a new empty filesystem root with this description")
+	doEdit     = flag.String("edit", "", "Replace the description of the root with this text")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
 )
@@ -58,6 +59,8 @@ func main() {
 		log.Fatal("You must set a non-empty -store address")
 	case *mountPoint == "" && *doNew == "":
 		log.Fatal("You must set a non-empty -mount path")
+	case *doNew != "" && *doEdit != "":
+		log.Fatal("You may not use both -new and -edit together")
 	case *rootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
 	case *doDebug:
@@ -98,6 +101,10 @@ func main() {
 		log.Printf("Loaded filesystem from %q (%x)", *rootKey, fkey)
 		if rootPointer.Description != "" {
 			log.Printf("| Description: %s", rootPointer.Description)
+		}
+		if *doEdit != "" {
+			rootPointer.Description = *doEdit
+			log.Printf("| New description: %s", rootPointer.Description)
 		}
 	}
 
