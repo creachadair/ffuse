@@ -247,6 +247,7 @@ func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fu
 
 // Lookup implements fs.NodeRequestLookuper.
 func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.LookupResponse) (node fs.Node, err error) {
+	// N.B. This requires a write lock because paging in children updates caches.
 	err = n.writeLock(func() error {
 		f, err := n.file.Open(ctx, req.Name)
 		if errors.Is(err, file.ErrChildNotFound) {
