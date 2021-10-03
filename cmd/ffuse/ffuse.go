@@ -32,12 +32,13 @@ var (
 	doNew      = flag.String("new", "", "Create a new empty filesystem root with this description")
 	doEdit     = flag.String("edit", "", "Replace the description of the root with this text")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
-	rootKey    = flag.String("root", "ROOT", "Storage key of root pointer")
+	rootKey    = flag.String("root", "root/default", "Storage key of root pointer")
 )
 
 func init() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `Usage: %[1]s -mount path -store addr [-root key]
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s -mount path -store addr -root key
+       %[1]s -root key -new "Description"
 
 Mount a FFS filesystem via FUSE at the specified path, using the blob store
 described by addr. If -debug is set, verbose FUSE debug logs are written to
