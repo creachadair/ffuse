@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/creachadair/ffs/file"
@@ -54,7 +55,7 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 	log.SetPrefix("[ffuse] ")
-	var copts jrpc2.ClientOptions
+
 	switch {
 	case *storeAddr == "":
 		log.Fatal("You must set a non-empty -store address")
@@ -64,7 +65,14 @@ func main() {
 		log.Fatal("You may not use both -new and -edit together")
 	case *rootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
-	case *doDebug:
+	}
+
+	if !strings.HasPrefix(*rootKey, "root:") {
+		*rootKey = "root:" + *rootKey
+	}
+
+	copts := new(jrpc2.ClientOptions)
+	if *doDebug {
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
 		log.Print("Enabled FUSE debug logging")
 		copts.Logger = log.New(os.Stderr, "[rpcstore] ", log.LstdFlags)
@@ -79,7 +87,7 @@ func main() {
 		log.Fatalf("Dialing blob server: %v", err)
 	}
 	defer conn.Close()
-	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), &copts), nil)
+	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
 
 	var rootPointer *root.Root
 	var rootFile *file.File
