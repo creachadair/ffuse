@@ -30,7 +30,6 @@ var (
 	storeAddr  = flag.String("store", os.Getenv("BLOB_STORE"), "Blob storage address (required)")
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
-	doNew      = flag.String("new", "", "Create a new empty filesystem root with this description")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "root/default", "Storage key of root pointer")
 )
@@ -58,7 +57,7 @@ func main() {
 	switch {
 	case *storeAddr == "":
 		log.Fatal("You must set a non-empty -store address")
-	case *mountPoint == "" && *doNew == "":
+	case *mountPoint == "":
 		log.Fatal("You must set a non-empty -mount path")
 	case *rootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
@@ -86,21 +85,7 @@ func main() {
 	defer conn.Close()
 	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
 
-	// Special case: Create a new root and exit without mounting anything.
-	// TODO: Move this to the ffs tool.
-	if *doNew != "" {
-		rp := root.New(cas, &root.Options{
-			Description: *doNew,
-		})
-		rf := file.New(cas, &file.NewOptions{
-			Stat: &file.Stat{Mode: os.ModeDir | 0755},
-		})
-		log.Printf("Creating empty filesystem root (%s)", *doNew)
-		flushRoot(ctx, rf, rp)
-		return
-	}
-
-	// Standard case: Load the designated root and extract its file.
+	// Load the designated root and extract its file.
 	rootPointer, err := root.Open(ctx, cas, *rootKey)
 	if err != nil {
 		log.Fatalf("Loading root pointer: %v", err)
