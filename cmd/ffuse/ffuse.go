@@ -31,7 +31,6 @@ var (
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
 	doNew      = flag.String("new", "", "Create a new empty filesystem root with this description")
-	doEdit     = flag.String("edit", "", "Replace the description of the root with this text")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "root/default", "Storage key of root pointer")
 )
@@ -61,8 +60,6 @@ func main() {
 		log.Fatal("You must set a non-empty -store address")
 	case *mountPoint == "" && *doNew == "":
 		log.Fatal("You must set a non-empty -mount path")
-	case *doNew != "" && *doEdit != "":
-		log.Fatal("You may not use both -new and -edit together")
 	case *rootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
 	}
@@ -89,32 +86,32 @@ func main() {
 	defer conn.Close()
 	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
 
-	var rootPointer *root.Root
-	var rootFile *file.File
+	// Special case: Create a new root and exit without mounting anything.
+	// TODO: Move this to the ffs tool.
 	if *doNew != "" {
-		rootPointer = root.New(cas, &root.Options{
+		rp := root.New(cas, &root.Options{
 			Description: *doNew,
 		})
-		rootFile = rootPointer.NewFile(&file.NewOptions{
+		rf := file.New(cas, &file.NewOptions{
 			Stat: &file.Stat{Mode: os.ModeDir | 0755},
 		})
 		log.Printf("Creating empty filesystem root (%s)", *doNew)
-		flushRoot(ctx, rootFile, rootPointer)
+		flushRoot(ctx, rf, rp)
 		return
-	} else if rootPointer, err = root.Open(ctx, cas, *rootKey); err != nil {
+	}
+
+	// Standard case: Load the designated root and extract its file.
+	rootPointer, err := root.Open(ctx, cas, *rootKey)
+	if err != nil {
 		log.Fatalf("Loading root pointer: %v", err)
-	} else if rootFile, err = rootPointer.File(ctx); err != nil {
+	}
+	rootFile, err := rootPointer.File(ctx)
+	if err != nil {
 		log.Fatalf("Loading root file: %v", err)
-	} else {
-		fkey, _ := rootFile.Flush(ctx)
-		log.Printf("Loaded filesystem from %q (%x)", *rootKey, fkey)
-		if rootPointer.Description != "" {
-			log.Printf("| Description: %s", rootPointer.Description)
-		}
-		if *doEdit != "" {
-			rootPointer.Description = *doEdit
-			log.Printf("| New description: %s", rootPointer.Description)
-		}
+	}
+	log.Printf("Loaded filesystem from %q (%x)", *rootKey, rootPointer.FileKey)
+	if rootPointer.Description != "" {
+		log.Printf("| Description: %s", rootPointer.Description)
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
@@ -170,6 +167,9 @@ func flushRoot(ctx context.Context, rf *file.File, rp *root.Root) {
 	key, err := rf.Flush(ctx)
 	if err != nil {
 		log.Fatalf("Flushing root: %v", err)
+	}
+	if _, err := rp.SetFile(ctx, key); err != nil {
+		log.Fatalf("Updating root file: %v", err)
 	}
 	if err := rp.Save(ctx, *rootKey); err != nil {
 		log.Fatalf("Updating root pointer: %v", err)
