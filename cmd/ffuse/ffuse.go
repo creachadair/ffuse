@@ -15,7 +15,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/creachadair/bitcaskstore"
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffs/file/root"
@@ -23,7 +22,6 @@ import (
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/rpcstore"
-	"github.com/creachadair/wbstore"
 
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
@@ -35,7 +33,6 @@ var (
 	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "", "Storage key of root pointer")
-	bufferDir  = flag.String("buffer", "", "Path to write-behind buffer directory")
 )
 
 func init() {
@@ -87,19 +84,8 @@ func main() {
 		log.Fatalf("Dialing blob server: %v", err)
 	}
 	defer conn.Close()
-	var cas blob.CAS = rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
+	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
 	defer blob.CloseStore(ctx, cas)
-	if *bufferDir != "" {
-		buf, err := bitcaskstore.Open(*bufferDir, nil)
-		if err != nil {
-			log.Fatalf("Opening buffer: %v", err)
-		}
-		defer blob.CloseStore(ctx, buf)
-		wb := wbstore.New(ctx, cas, buf)
-		defer wb.Sync(ctx)
-		log.Printf("Enabled write-behind with buffer store %q", *bufferDir)
-		cas = wb
-	}
 
 	// Load the designated root and extract its file.
 	rootPointer, err := root.Open(ctx, cas, *rootKey)
