@@ -214,6 +214,7 @@ func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (nod
 		if tgt.file.Stat().Mode.IsDir() {
 			return fuse.EPERM
 		}
+
 		n.file.Child().Set(req.NewName, tgt.file)
 		n.fs.server.InvalidateEntry(n, req.NewName)
 		n.fs.server.InvalidateNodeAttr(n)
