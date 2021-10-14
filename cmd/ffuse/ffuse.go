@@ -102,7 +102,6 @@ func main() {
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
-	fsys := ffuse.New(rootFile)
 	opts := []fuse.MountOption{
 		fuse.FSName("ffs"),
 		fuse.Subtype("ffs"),
@@ -112,12 +111,15 @@ func main() {
 	if *doReadOnly {
 		opts = append(opts, fuse.ReadOnly())
 	}
-	c, err := fuse.Mount(*mountPoint, opts...)
 
+	c, err := fuse.Mount(*mountPoint, opts...)
 	if err != nil {
 		log.Fatalf("Mount failed: %v", err)
 	}
-	done := make(chan error)
+
+	server := fs.New(c, nil)
+	fsys := ffuse.New(rootFile, server)
+	done := make(chan error, 1)
 	go func() { defer close(done); done <- fs.Serve(c, fsys) }()
 
 	// Wait for the server to come up, and check that it successfully mounted.

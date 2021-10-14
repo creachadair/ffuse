@@ -23,15 +23,16 @@ import (
 
 // New constructs a new FS with the given root file.  The resulting value is
 // safe for concurrent use by multiple goroutines.
-func New(root *file.File) *FS { return &FS{root: root} }
+func New(root *file.File, server *fs.Server) *FS { return &FS{root: root} }
 
 // FS implements the fs.FS interface.
 type FS struct {
 	// All operations on any node of the filesystem must hold μ.
 	// Operations that modify the contents of the tree must hold a write lock.
 
-	μ    sync.RWMutex
-	root *file.File
+	μ      sync.RWMutex
+	root   *file.File
+	server *fs.Server
 }
 
 // Root implements the fs.FS interface.
@@ -387,8 +388,10 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 		}
 
 		defer n.touchIfOK(nil)
-		n.file.Child().Remove(req.OldName)     // remove from the old directory
+		n.file.Child().Remove(req.OldName) // remove from the old directory
+		n.fs.server.InvalidateEntry(n, req.OldName)
 		dir.file.Child().Set(req.NewName, src) // add to the new directory
+		n.fs.server.InvalidateEntry(dir, req.NewName)
 		return nil
 	})
 }
