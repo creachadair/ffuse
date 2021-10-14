@@ -84,7 +84,7 @@ func main() {
 		log.Fatalf("Dialing blob server: %v", err)
 	}
 	defer conn.Close()
-	cas := rpcstore.NewClient(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
+	cas := rpcstore.NewCAS(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
 	defer blob.CloseStore(ctx, cas)
 
 	// Load the designated root and extract its file.
@@ -102,7 +102,7 @@ func main() {
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
-	server := ffuse.New(rootFile)
+	fsys := ffuse.New(rootFile)
 	opts := []fuse.MountOption{
 		fuse.FSName("ffs"),
 		fuse.Subtype("ffs"),
@@ -118,7 +118,7 @@ func main() {
 		log.Fatalf("Mount failed: %v", err)
 	}
 	done := make(chan error)
-	go func() { defer close(done); done <- fs.Serve(c, server) }()
+	go func() { defer close(done); done <- fs.Serve(c, fsys) }()
 
 	// Wait for the server to come up, and check that it successfully mounted.
 	<-c.Ready
