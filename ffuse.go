@@ -215,6 +215,8 @@ func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (nod
 			return fuse.EPERM
 		}
 		n.file.Child().Set(req.NewName, tgt.file)
+		n.fs.server.InvalidateEntry(n, req.NewName)
+		n.fs.server.InvalidateNodeAttr(n)
 		node = tgt
 		defer n.touchIfOK(nil)
 		return nil
@@ -334,6 +336,8 @@ func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 			return fuse.EPERM // rmdir(non-directory)
 		}
 		n.file.Child().Remove(req.Name)
+		n.fs.server.InvalidateEntry(n, req.Name)
+		n.fs.server.InvalidateNodeAttr(n)
 		return nil
 	})
 }
