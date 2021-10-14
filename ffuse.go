@@ -23,7 +23,7 @@ import (
 
 // New constructs a new FS with the given root file.  The resulting value is
 // safe for concurrent use by multiple goroutines.
-func New(root *file.File, server *fs.Server) *FS { return &FS{root: root} }
+func New(root *file.File, server *fs.Server) *FS { return &FS{root: root, server: server} }
 
 // FS implements the fs.FS interface.
 type FS struct {
@@ -390,8 +390,10 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 		defer n.touchIfOK(nil)
 		n.file.Child().Remove(req.OldName) // remove from the old directory
 		n.fs.server.InvalidateEntry(n, req.OldName)
+		n.fs.server.InvalidateNodeAttr(n)
 		dir.file.Child().Set(req.NewName, src) // add to the new directory
 		n.fs.server.InvalidateEntry(dir, req.NewName)
+		n.fs.server.InvalidateNodeAttr(dir)
 		return nil
 	})
 }
