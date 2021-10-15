@@ -545,7 +545,12 @@ func (h Handle) Write(ctx context.Context, req *fuse.WriteRequest, rsp *fuse.Wri
 func (h Handle) Flush(ctx context.Context, req *fuse.FlushRequest) error { return h.flush(ctx) }
 
 // Release implements fs.HandleReleaser.
-func (h Handle) Release(ctx context.Context, req *fuse.ReleaseRequest) error { return h.flush(ctx) }
+func (h Handle) Release(ctx context.Context, req *fuse.ReleaseRequest) error {
+	if h.writable || h.append {
+		h.fs.server.InvalidateNodeAttr(h.Node)
+	}
+	return h.flush(ctx)
+}
 
 // ReadDirAll implements fs.HandleReadDirAller.
 func (h Handle) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
