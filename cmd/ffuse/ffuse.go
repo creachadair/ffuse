@@ -157,9 +157,10 @@ func flushRoot(ctx context.Context, rf *file.File, rp *root.Root) {
 	if err != nil {
 		log.Fatalf("Flushing root: %v", err)
 	}
-	if _, err := rp.SetFile(ctx, key); err != nil {
-		log.Fatalf("Updating root file: %v", err)
+	if key != rp.FileKey {
+		rp.IndexKey = "" // invalidate the index, if there is one
 	}
+	rp.FileKey = key
 	if err := rp.Save(ctx, *rootKey, true); err != nil {
 		log.Fatalf("Updating root pointer: %v", err)
 	}
