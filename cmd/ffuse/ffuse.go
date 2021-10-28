@@ -72,7 +72,7 @@ func main() {
 	if *doDebug {
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
 		log.Print("Enabled FUSE debug logging")
-		copts.Logger = log.New(os.Stderr, "[rpcstore] ", log.LstdFlags)
+		copts.Logger = jrpc2.StdLogger(log.New(os.Stderr, "[rpcstore] ", log.LstdFlags))
 		log.Print("Enabled storage client logging")
 	}
 
