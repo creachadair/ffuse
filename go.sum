@@ -4,8 +4,8 @@ github.com/creachadair/ffs v0.0.0-20211024191637-71e3a3b81cae/go.mod h1:BNrBgicj
 github.com/creachadair/ffs v0.0.0-20211107155509-121a5d80477f h1:Ea4NAlgAUvd26p0jtb3ny8TIUV6hKUlu1FTlzaY45H0=
 github.com/creachadair/ffs v0.0.0-20211107155509-121a5d80477f/go.mod h1:BNrBgicjh5a9fi/kyaz6r/oGMjYXbm3nQ/uSo/v4MHo=
 github.com/creachadair/jrpc2 v0.30.1/go.mod h1:w+GXZGc+NwsH0xsUOgeLBIIRM0jBOSTXhv28KaWGRZU=
-github.com/creachadair/jrpc2 v0.30.2 h1:6SnKtgURulRs/Jdw8j1uFWdNLblH8zYFAT/O0DPedak=
-github.com/creachadair/jrpc2 v0.30.2/go.mod h1:w+GXZGc+NwsH0xsUOgeLBIIRM0jBOSTXhv28KaWGRZU=
+github.com/creachadair/jrpc2 v0.30.3 h1:fz8xYfTmIgxJXvr9HAoz0XBOpNklyixE7Hnh6iQP/4o=
+github.com/creachadair/jrpc2 v0.30.3/go.mod h1:w+GXZGc+NwsH0xsUOgeLBIIRM0jBOSTXhv28KaWGRZU=
 github.com/creachadair/rpcstore v0.0.0-20211101173528-6bed2c0c9058 h1:RAsg6nVUUf6SBog64Fa/NIlD+/r+OTTgzymSLDDM9QI=
 github.com/creachadair/rpcstore v0.0.0-20211101173528-6bed2c0c9058/go.mod h1:KUfMtJozJGhEA2JWJCxVY8OtNCNNtulwWt6lUJ81LOc=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
