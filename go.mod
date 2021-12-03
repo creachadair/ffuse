@@ -3,9 +3,9 @@ module github.com/creachadair/ffuse
 go 1.17
 
 require (
-	github.com/creachadair/ffs v0.0.0-20211129191319-26cfc0f7b8de
-	github.com/creachadair/jrpc2 v0.32.0
-	github.com/creachadair/rpcstore v0.0.0-20211129190511-bbe9c771d63b
+	github.com/creachadair/ffs v0.0.0-20211202183745-4d55a0508d03
+	github.com/creachadair/jrpc2 v0.32.1
+	github.com/creachadair/rpcstore v0.0.0-20211203034127-22564bcbe83c
 	github.com/seaweedfs/fuse v1.2.0
 )
 
