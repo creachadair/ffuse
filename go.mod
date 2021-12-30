@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/creachadair/ffs v0.0.0-20211207080200-4aff01c85684
-	github.com/creachadair/jrpc2 v0.35.1
+	github.com/creachadair/jrpc2 v0.35.2
 	github.com/creachadair/rpcstore v0.0.0-20211227020113-06644b0511f5
 	github.com/seaweedfs/fuse v1.2.1
 )
