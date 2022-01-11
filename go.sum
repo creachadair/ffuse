@@ -15,8 +15,8 @@ github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEW
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.6 h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
-github.com/seaweedfs/fuse v1.2.1 h1:920YH3+PnIqpNLo2lsZDTUJHUPLXnxgQGEXoVb/yMno=
-github.com/seaweedfs/fuse v1.2.1/go.mod h1:iwbDQv5BZACY54r6AO/6xsLNuMaYcBKSkLTZVfmK594=
+github.com/seaweedfs/fuse v1.2.2 h1:01l8OjIdyATRNqVc/gDPgFobuC8ubQF3hRKOPColROw=
+github.com/seaweedfs/fuse v1.2.2/go.mod h1:iwbDQv5BZACY54r6AO/6xsLNuMaYcBKSkLTZVfmK594=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c h1:5KslGYwFpkhGh+Q16bwMP3cOontH8FOep7tGV86Y7SQ=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20210817142637-7d9622a276b7/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
