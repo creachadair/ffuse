@@ -11,6 +11,6 @@ require (
 
 require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27 // indirect
+	golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
