@@ -4,8 +4,8 @@ github.com/creachadair/ffs v0.0.0-20220212145432-089856c9d756 h1:G65n46/x4vWAyFh
 github.com/creachadair/ffs v0.0.0-20220212145432-089856c9d756/go.mod h1:ZfRSxYFbv8/H/fvlTxx4pYnzwkEo/MIaViSl4bdEnJY=
 github.com/creachadair/jrpc2 v0.35.5 h1:V4WaRUSHhMglmKgRXcmGEWQMo2oA9tBFHl94qXP4wmw=
 github.com/creachadair/jrpc2 v0.35.5/go.mod h1:a53Cer/NMD1y8P9UB2XbuOLRELKRLDf8u7bRi4v1qsE=
-github.com/creachadair/rpcstore v0.0.0-20220212145809-0230fbe3b7a9 h1:OV/ITYwVWJSejSTQgQJ0O/8M9wt16a9n6ChS/Hd9yOE=
-github.com/creachadair/rpcstore v0.0.0-20220212145809-0230fbe3b7a9/go.mod h1:K4RmXGDnUeR6y9oPRRpVVBZ9eF8NQVz/SsFqpmMu/7I=
+github.com/creachadair/rpcstore v0.0.0-20220213164602-851ea0285e25 h1:v9ajKu2srexJab8E803cuH4087sPU3oVPGTxxgF8exY=
+github.com/creachadair/rpcstore v0.0.0-20220213164602-851ea0285e25/go.mod h1:K4RmXGDnUeR6y9oPRRpVVBZ9eF8NQVz/SsFqpmMu/7I=
 github.com/creachadair/taskgroup v0.3.1/go.mod h1:q490pQxvbLXtIe4w8xlf5tcO6RR1AhRfWHXO0MotmHs=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
