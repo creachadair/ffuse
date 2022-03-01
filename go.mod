@@ -5,12 +5,12 @@ go 1.17
 require (
 	github.com/creachadair/ffs v0.0.0-20220221122908-85114e17bf06
 	github.com/creachadair/jrpc2 v0.37.0
-	github.com/creachadair/rpcstore v0.0.0-20220221175021-530c69376054
+	github.com/creachadair/rpcstore v0.0.0-20220226220356-78865e72fcf7
 	github.com/seaweedfs/fuse v1.2.2
 )
 
 require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220224120231-95c6836cb0e7 // indirect
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
