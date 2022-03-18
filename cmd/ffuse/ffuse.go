@@ -38,7 +38,6 @@ var (
 func init() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %[1]s -mount path -store addr -root key
-       %[1]s -root key -new "Description"
 
 Mount a FFS filesystem via FUSE at the specified path, using the blob store
 described by addr. If -debug is set, verbose FUSE debug logs are written to
