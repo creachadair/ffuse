@@ -4,8 +4,8 @@ github.com/creachadair/ffs v0.0.0-20220322155852-b9ea0b340867 h1:TmHGNvvKd/0ySq+
 github.com/creachadair/ffs v0.0.0-20220322155852-b9ea0b340867/go.mod h1:SQaZLcVpQD6EcBDvgjXoCXfck0pHqMZ36YYaFRauSWM=
 github.com/creachadair/jrpc2 v0.37.0 h1:ULoWu1MPX+KTF1QsP6MFGTzvUTPHJxVEIV/D0Pn495k=
 github.com/creachadair/jrpc2 v0.37.0/go.mod h1:a53Cer/NMD1y8P9UB2XbuOLRELKRLDf8u7bRi4v1qsE=
-github.com/creachadair/rpcstore v0.0.0-20220323161241-f443f3105a7b h1:1CZLjVhmZ0kUJzsqaONYJXDskeXoUtcy3/Dt/mfOJkQ=
-github.com/creachadair/rpcstore v0.0.0-20220323161241-f443f3105a7b/go.mod h1:E/t822DK0otGwHH62cQy8RMwXjL/C6bIddK2bwCGuns=
+github.com/creachadair/rpcstore v0.0.0-20220330011735-198aac3bf1cd h1:pacapgJFGaSVM9wfmsqNXlgscGYs99ub65jQMQT99MI=
+github.com/creachadair/rpcstore v0.0.0-20220330011735-198aac3bf1cd/go.mod h1:E/t822DK0otGwHH62cQy8RMwXjL/C6bIddK2bwCGuns=
 github.com/creachadair/taskgroup v0.3.2/go.mod h1:wieWwecHVzsidg2CsUnFinW1faVN4+kq+TDlRJQ0Wbk=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
@@ -19,8 +19,8 @@ github.com/seaweedfs/fuse v1.2.2/go.mod h1:iwbDQv5BZACY54r6AO/6xsLNuMaYcBKSkLTZV
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c h1:5KslGYwFpkhGh+Q16bwMP3cOontH8FOep7tGV86Y7SQ=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20210817142637-7d9622a276b7/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220329152356-43be30ef3008 h1:pq9pwoi2rjLWvmiVser/lIOgiyA3fli4M+RfGVMA7nE=
-golang.org/x/sys v0.0.0-20220329152356-43be30ef3008/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f h1:rlezHXNlxYWvBCzNses9Dlc7nGFaNMJeqLolcmQSSZY=
+golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
