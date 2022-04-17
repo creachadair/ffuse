@@ -1,11 +1,12 @@
 github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/creachadair/atomicfile v0.2.5/go.mod h1:BRq8Une6ckFneYXZQ+kO7p1ZZP3I2fzVzf28JxrIkBc=
-github.com/creachadair/ffs v0.0.0-20220416191121-07217a8a1b12 h1:wcBW74IkIgQxx6tzOKzXHUN2hsLoDR73av975CgAzAo=
 github.com/creachadair/ffs v0.0.0-20220416191121-07217a8a1b12/go.mod h1:WXuemzxJi6QBMNqzrg2dzCO4EhxZeFV203bf8CfYUUw=
+github.com/creachadair/ffs v0.0.0-20220416213235-6388f88050e4 h1:7VEFm7fDVfeOrUYIsn2lTa3Qs0rvS6+fuEmB/e+1U/E=
+github.com/creachadair/ffs v0.0.0-20220416213235-6388f88050e4/go.mod h1:WXuemzxJi6QBMNqzrg2dzCO4EhxZeFV203bf8CfYUUw=
 github.com/creachadair/jrpc2 v0.37.0 h1:ULoWu1MPX+KTF1QsP6MFGTzvUTPHJxVEIV/D0Pn495k=
 github.com/creachadair/jrpc2 v0.37.0/go.mod h1:a53Cer/NMD1y8P9UB2XbuOLRELKRLDf8u7bRi4v1qsE=
-github.com/creachadair/rpcstore v0.0.0-20220416191546-9c04012eca98 h1:6TrTeM4p3nlrwVjIVBzSYMcbemTOzUg9EzN5Fe7/rz0=
-github.com/creachadair/rpcstore v0.0.0-20220416191546-9c04012eca98/go.mod h1:K+bysYdo4EeqlruF5GEwFDrlqwDAoLLeXd6DvtdmsAc=
+github.com/creachadair/rpcstore v0.0.0-20220416213235-fabf059c2849 h1:A4EpUhIULaASBwpwE4xgxatu0Ntzcn+ooRqpxCO40Bo=
+github.com/creachadair/rpcstore v0.0.0-20220416213235-fabf059c2849/go.mod h1:K+bysYdo4EeqlruF5GEwFDrlqwDAoLLeXd6DvtdmsAc=
 github.com/creachadair/taskgroup v0.3.2/go.mod h1:wieWwecHVzsidg2CsUnFinW1faVN4+kq+TDlRJQ0Wbk=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
