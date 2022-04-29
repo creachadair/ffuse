@@ -365,7 +365,9 @@ func (n Node) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) err
 		if _, ok := x.Get(req.Name); !ok {
 			return xattrErrnoNotFound
 		}
-		defer n.touchIfOK(nil)
+
+		// N.B. Do not update the modtime for extended attribute changes.  POSIX
+		// defines mtime as for a change of file contents.
 		x.Remove(req.Name)
 		return nil
 	})
@@ -466,6 +468,8 @@ func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
 			return xattrErrnoNotFound // replace, but does not exist
 		}
 
+		// N.B. Do not update the modtime for extended attribute changes.  POSIX
+		// defines mtime as for a change of file contents.
 		x.Set(req.Name, string(req.Xattr))
 		return nil
 	})
