@@ -24,12 +24,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffs/file/root"
+	"github.com/creachadair/ffs/storage/prefixed"
 	"github.com/creachadair/ffuse"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
@@ -75,10 +75,6 @@ func main() {
 		log.Fatal("You must set a non-empty -root pointer key")
 	}
 
-	if !strings.HasPrefix(*rootKey, "root:") {
-		*rootKey = "root:" + *rootKey
-	}
-
 	copts := new(jrpc2.ClientOptions)
 	if *doDebug {
 		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
@@ -95,15 +91,17 @@ func main() {
 		log.Fatalf("Dialing blob server: %v", err)
 	}
 	defer conn.Close()
-	cas := rpcstore.NewCAS(jrpc2.NewClient(channel.Line(conn, conn), copts), nil)
+	cas := prefixed.NewCAS(rpcstore.NewCAS(
+		jrpc2.NewClient(channel.Line(conn, conn), copts), nil)).Derive(" ")
 	defer blob.CloseStore(ctx, cas)
 
 	// Load the designated root and extract its file.
-	rootPointer, err := root.Open(ctx, cas, *rootKey)
+	roots := cas.Derive("@")
+	rootPointer, err := root.Open(ctx, roots, *rootKey)
 	if err != nil {
 		log.Fatalf("Loading root pointer: %v", err)
 	}
-	rootFile, err := rootPointer.File(ctx)
+	rootFile, err := rootPointer.File(ctx, cas)
 	if err != nil {
 		log.Fatalf("Loading root file: %v", err)
 	}
