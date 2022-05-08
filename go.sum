@@ -1,5 +1,8 @@
+github.com/creachadair/atomicfile v0.2.6 h1:FgYxYvGcqREApTY8Nxg8msM6P/KVKK3ob5h9FaRUTNg=
 github.com/creachadair/ffs v0.0.0-20220508072602-745ceccc5502 h1:hZMxHhy8A4/QZ1v1ZPNOorpRNgAEms2hBLwOiiqolZs=
 github.com/creachadair/ffs v0.0.0-20220508072602-745ceccc5502/go.mod h1:aX3kOK6xF3dpawpnySojMka9cZnBBi+I+vvMBDGs/cw=
+github.com/creachadair/ffstools v0.0.0-20220508192801-fd4a190307a6 h1:fCjh+FRyVcxYFJSSuE2CN4c3uf5PrSoGxebNpR35QPg=
+github.com/creachadair/ffstools v0.0.0-20220508192801-fd4a190307a6/go.mod h1:+HkF+mEbvZaslaU8W16QwuIqJ/xY1kM1AEGodqttSB8=
 github.com/creachadair/jrpc2 v0.40.0 h1:OFAu2rhGMSdS6BaEIO7BYS8cZ4REb3mOrFLqP6JXGJA=
 github.com/creachadair/jrpc2 v0.40.0/go.mod h1:SwEPHK3zqbc5j6AVBVdGoc2QYwYDQUBGnQYk0tflx9k=
 github.com/creachadair/rpcstore v0.0.0-20220508080459-3869c350ed90 h1:jnMS0dPkixDjvdVd6ZslWIFz6mgnq1nz5k3v3f3iPww=
@@ -20,3 +23,7 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.28.0 h1:w43yiav+6bVFTBQFZX0r7ipe9JQ1QsbMgHwbBziscLw=
 google.golang.org/protobuf v1.28.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b h1:h8qDotaEPuJATrMmW04NCwg7v22aHH28wwpauUhK9Oo=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

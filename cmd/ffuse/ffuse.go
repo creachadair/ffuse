@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -29,20 +28,16 @@ import (
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffs/file/root"
-	"github.com/creachadair/ffs/storage/prefixed"
+	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/ffuse"
-	"github.com/creachadair/jrpc2"
-	"github.com/creachadair/jrpc2/channel"
-	"github.com/creachadair/rpcstore"
 
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
 )
 
 var (
-	storeAddr  = flag.String("store", os.Getenv("BLOB_STORE"), "Blob storage address (required)")
+	storeAddr  = flag.String("store", os.Getenv("FFS_STORE"), "Blob storage address (required)")
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
-	doDebug    = flag.Bool("debug", false, "If set, enable debug logging")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	rootKey    = flag.String("root", "", "Storage key of root pointer")
 )
@@ -67,36 +62,29 @@ func main() {
 	log.SetPrefix("[ffuse] ")
 
 	switch {
-	case *storeAddr == "":
-		log.Fatal("You must set a non-empty -store address")
 	case *mountPoint == "":
 		log.Fatal("You must set a non-empty -mount path")
 	case *rootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
 	}
 
-	copts := new(jrpc2.ClientOptions)
-	if *doDebug {
-		fuse.Debug = func(msg interface{}) { log.Printf("[ffs] %v", msg) }
-		log.Print("Enabled FUSE debug logging")
-		copts.Logger = jrpc2.StdLogger(log.New(os.Stderr, "[rpcstore] ", log.LstdFlags))
-		log.Print("Enabled storage client logging")
+	cfg, err := config.Load(config.Path())
+	if err != nil {
+		log.Fatalf("Loading configuration: %v", err)
+	}
+	if *storeAddr != "" {
+		cfg.DefaultStore = *storeAddr
 	}
 
 	ctx := context.Background()
-
-	// Set up the CAS for the filesystem.
-	conn, err := net.Dial(jrpc2.Network(*storeAddr))
+	cas, err := cfg.OpenStore()
 	if err != nil {
-		log.Fatalf("Dialing blob server: %v", err)
+		log.Fatalf("Opening blob store: %v", err)
 	}
-	defer conn.Close()
-	cas := prefixed.NewCAS(rpcstore.NewCAS(
-		jrpc2.NewClient(channel.Line(conn, conn), copts), nil)).Derive(" ")
 	defer blob.CloseStore(ctx, cas)
 
 	// Load the designated root and extract its file.
-	roots := cas.Derive("@")
+	roots := config.Roots(cas)
 	rootPointer, err := root.Open(ctx, roots, *rootKey)
 	if err != nil {
 		log.Fatalf("Loading root pointer: %v", err)
