@@ -1,12 +1,12 @@
 github.com/creachadair/atomicfile v0.2.6 h1:FgYxYvGcqREApTY8Nxg8msM6P/KVKK3ob5h9FaRUTNg=
 github.com/creachadair/ffs v0.0.0-20220523163451-3b7ffac9e4c3 h1:J4NXHbn0CMZquxvNV5IvFNBitDGfctE8Hhs1oZMsk/s=
 github.com/creachadair/ffs v0.0.0-20220523163451-3b7ffac9e4c3/go.mod h1:Rkso29jNNoMD8+pILGjLHiUL+ZkSNUH+cnLyhT7KGYU=
-github.com/creachadair/ffstools v0.0.0-20220524040638-add6f2f4f02b h1:maJcXHfH/CE38xSMajgW8CrKH+yHmAfTOObEtETq3nc=
-github.com/creachadair/ffstools v0.0.0-20220524040638-add6f2f4f02b/go.mod h1:+/LsiaV2VL+dbcfOouE0LskLEcuNamMJwg5pAGnVycA=
+github.com/creachadair/ffstools v0.0.0-20220526152323-cdbfe351d573 h1:NFmCoZ4nQeqTzrrsCwRjVc6qISUy/n1qubjp2Vw/RjM=
+github.com/creachadair/ffstools v0.0.0-20220526152323-cdbfe351d573/go.mod h1:z3ZR2oNbMCznB36iR3ZkOj+L0gBf68ZMg0zbHZDntOg=
 github.com/creachadair/jrpc2 v0.41.0 h1:5ymgzbDfb8YeGT72h4223AWL9u1nAHJkz5K42uD7MBo=
 github.com/creachadair/jrpc2 v0.41.0/go.mod h1:SwEPHK3zqbc5j6AVBVdGoc2QYwYDQUBGnQYk0tflx9k=
-github.com/creachadair/rpcstore v0.0.0-20220518225449-750448fd04eb h1:GKC/bV1nbJlwdZZ5B3ivC+TKb4T0cNonf9H/OzGnEfE=
-github.com/creachadair/rpcstore v0.0.0-20220518225449-750448fd04eb/go.mod h1:bMgjVTUFt8gsna12177w7miSjCrsY/2BUYxnXlWSydI=
+github.com/creachadair/rpcstore v0.0.0-20220524163725-22293c54f9fa h1:3scdNRU1olsqtmRw/jGi/Ws4OU6NyJ7Zr1XWCjFA0xw=
+github.com/creachadair/rpcstore v0.0.0-20220524163725-22293c54f9fa/go.mod h1:zMmel1+TTZMx4cxnkoZhHsMTt5YwIyQpw9OOamQ3YQw=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
