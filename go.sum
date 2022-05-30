@@ -1,8 +1,8 @@
 github.com/creachadair/atomicfile v0.2.6 h1:FgYxYvGcqREApTY8Nxg8msM6P/KVKK3ob5h9FaRUTNg=
 github.com/creachadair/ffs v0.0.0-20220523163451-3b7ffac9e4c3 h1:J4NXHbn0CMZquxvNV5IvFNBitDGfctE8Hhs1oZMsk/s=
 github.com/creachadair/ffs v0.0.0-20220523163451-3b7ffac9e4c3/go.mod h1:Rkso29jNNoMD8+pILGjLHiUL+ZkSNUH+cnLyhT7KGYU=
-github.com/creachadair/ffstools v0.0.0-20220526152323-cdbfe351d573 h1:NFmCoZ4nQeqTzrrsCwRjVc6qISUy/n1qubjp2Vw/RjM=
-github.com/creachadair/ffstools v0.0.0-20220526152323-cdbfe351d573/go.mod h1:z3ZR2oNbMCznB36iR3ZkOj+L0gBf68ZMg0zbHZDntOg=
+github.com/creachadair/ffstools v0.0.0-20220530194315-5529ffc88d0c h1:eG4C5195oHo+OHk2xTmWhS91Qd8YXD78zZk/cZnFxFo=
+github.com/creachadair/ffstools v0.0.0-20220530194315-5529ffc88d0c/go.mod h1:T9GzdicEv/GiXjuJf197S84m57EGpbxphOMadKUwAoo=
 github.com/creachadair/jrpc2 v0.41.0 h1:5ymgzbDfb8YeGT72h4223AWL9u1nAHJkz5K42uD7MBo=
 github.com/creachadair/jrpc2 v0.41.0/go.mod h1:SwEPHK3zqbc5j6AVBVdGoc2QYwYDQUBGnQYk0tflx9k=
 github.com/creachadair/rpcstore v0.0.0-20220524163725-22293c54f9fa h1:3scdNRU1olsqtmRw/jGi/Ws4OU6NyJ7Zr1XWCjFA0xw=
@@ -26,5 +26,5 @@ google.golang.org/protobuf v1.28.0 h1:w43yiav+6bVFTBQFZX0r7ipe9JQ1QsbMgHwbBziscL
 google.golang.org/protobuf v1.28.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
-gopkg.in/yaml.v3 v3.0.0 h1:hjy8E9ON/egN1tAYqKb61G10WtihqetD4sz2H+8nIeA=
-gopkg.in/yaml.v3 v3.0.0/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
