@@ -1,12 +1,12 @@
 github.com/creachadair/atomicfile v0.2.6 h1:FgYxYvGcqREApTY8Nxg8msM6P/KVKK3ob5h9FaRUTNg=
 github.com/creachadair/ffs v0.0.0-20220523163451-3b7ffac9e4c3 h1:J4NXHbn0CMZquxvNV5IvFNBitDGfctE8Hhs1oZMsk/s=
 github.com/creachadair/ffs v0.0.0-20220523163451-3b7ffac9e4c3/go.mod h1:Rkso29jNNoMD8+pILGjLHiUL+ZkSNUH+cnLyhT7KGYU=
-github.com/creachadair/ffstools v0.0.0-20220530194315-5529ffc88d0c h1:eG4C5195oHo+OHk2xTmWhS91Qd8YXD78zZk/cZnFxFo=
-github.com/creachadair/ffstools v0.0.0-20220530194315-5529ffc88d0c/go.mod h1:T9GzdicEv/GiXjuJf197S84m57EGpbxphOMadKUwAoo=
+github.com/creachadair/ffstools v0.0.0-20220602213436-505f998141d3 h1:JY5fe1MOvlenXX3F13fNMSsZn2UpBv/KBTWmdGiLyrQ=
+github.com/creachadair/ffstools v0.0.0-20220602213436-505f998141d3/go.mod h1:NFCLuQs//PH+PvJT+gFu1TSVKFDXeiW556r42oDEX1k=
 github.com/creachadair/jrpc2 v0.41.0 h1:5ymgzbDfb8YeGT72h4223AWL9u1nAHJkz5K42uD7MBo=
 github.com/creachadair/jrpc2 v0.41.0/go.mod h1:SwEPHK3zqbc5j6AVBVdGoc2QYwYDQUBGnQYk0tflx9k=
-github.com/creachadair/rpcstore v0.0.0-20220524163725-22293c54f9fa h1:3scdNRU1olsqtmRw/jGi/Ws4OU6NyJ7Zr1XWCjFA0xw=
-github.com/creachadair/rpcstore v0.0.0-20220524163725-22293c54f9fa/go.mod h1:zMmel1+TTZMx4cxnkoZhHsMTt5YwIyQpw9OOamQ3YQw=
+github.com/creachadair/rpcstore v0.0.0-20220602213345-98106477be19 h1:UxVPOq1NxOt7V9Bcs3vHOyXQQTsBLYITwwoimlyHW9I=
+github.com/creachadair/rpcstore v0.0.0-20220602213345-98106477be19/go.mod h1:oi42P59HSH0NwbAE47VUYkXxWUU5egkrQOE+TiSTnTY=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
@@ -16,8 +16,8 @@ github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeN
 github.com/seaweedfs/fuse v1.2.2 h1:01l8OjIdyATRNqVc/gDPgFobuC8ubQF3hRKOPColROw=
 github.com/seaweedfs/fuse v1.2.2/go.mod h1:iwbDQv5BZACY54r6AO/6xsLNuMaYcBKSkLTZVfmK594=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
-golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 h1:w8s32wxx3sY+OjLlv9qltkLU5yvJzxjjgiHWLjdIcw4=
-golang.org/x/sync v0.0.0-20220513210516-0976fa681c29/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f h1:Ax0t5p6N38Ga0dThY21weqDEyz2oklo4IvDkpigvkD8=
+golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a h1:dGzPydgVsqGcTRVwiLJ1jVbufYwmzD3LfVPLKsKg+0k=
 golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
