@@ -9,8 +9,8 @@ require (
 )
 
 require (
-	github.com/creachadair/jrpc2 v0.41.0 // indirect
-	github.com/creachadair/rpcstore v0.0.0-20220803152318-b6dee76f740f // indirect
+	github.com/creachadair/jrpc2 v0.41.1 // indirect
+	github.com/creachadair/rpcstore v0.0.0-20220808163302-c3ee66ecbc12 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
