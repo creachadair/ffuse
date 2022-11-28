@@ -1,8 +1,8 @@
 github.com/creachadair/atomicfile v0.2.7 h1:LiL/QmAUO7ZDsjSJ6xj3PlsXaYXYKMS8g/Po5S9IIk4=
 github.com/creachadair/ffs v0.0.0-20221118160344-cda956c7a60c h1:uhBtXcpW/inFq3VSB9gkZwew3F2aAohaM1tB0sTL/6A=
 github.com/creachadair/ffs v0.0.0-20221118160344-cda956c7a60c/go.mod h1:tVNdl7pW0/rOqtX4USNfZUqCWlPwRwSqIK7lpr19r0s=
-github.com/creachadair/ffstools v0.0.0-20221118160936-4e19c75ab355 h1:6uF5MzZrHPWkkY4110fi9eLsj1If9L1Lp/t9XKLaO5g=
-github.com/creachadair/ffstools v0.0.0-20221118160936-4e19c75ab355/go.mod h1:RadoyxxSlMTgIXIAuo55KYhE6loS7lmMFtZDE45ndRE=
+github.com/creachadair/ffstools v0.0.0-20221128170544-4cc355926620 h1:JgZcO+ynLM2VXGMYUqcQzHQcvbqcPH9pPIOeLbqzz58=
+github.com/creachadair/ffstools v0.0.0-20221128170544-4cc355926620/go.mod h1:NDZwXqo11ZM8xGYO3SIrH4vZcd3ieihOmcenMIcLVoY=
 github.com/creachadair/jrpc2 v0.42.0 h1:nm02PNw7cWV+JhKrJyDKg7/M7nrE0DJK0TiMmEL+iv8=
 github.com/creachadair/jrpc2 v0.42.0/go.mod h1:oOdNFoMQQpSirGcSujG10NYl05K/IYrIUUNbh+/Xcd8=
 github.com/creachadair/rpcstore v0.0.0-20221118160629-03afc39950ff h1:THkl7e3k0HSveUPdfsdaTBgPooJd4DWRtOpSSsStyHI=
