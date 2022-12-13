@@ -3,14 +3,14 @@ module github.com/creachadair/ffuse
 go 1.18
 
 require (
-	github.com/creachadair/ffs v0.0.0-20221211093811-34aef8098e36
-	github.com/creachadair/ffstools v0.0.0-20221209163233-f0dd4efdd83b
+	github.com/creachadair/ffs v0.0.0-20221212045819-dff23ca2114e
+	github.com/creachadair/ffstools v0.0.0-20221212161058-3d9d4ddf6938
 	github.com/seaweedfs/fuse v1.2.2
 )
 
 require (
 	github.com/creachadair/chirp v0.0.0-20221206073639-8ba6bb1ade78 // indirect
-	github.com/creachadair/chirpstore v0.0.0-20221211093652-ab1a26e3a43d // indirect
+	github.com/creachadair/chirpstore v0.0.0-20221212064613-a94b6a85b66c // indirect
 	github.com/creachadair/taskgroup v0.3.2 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
