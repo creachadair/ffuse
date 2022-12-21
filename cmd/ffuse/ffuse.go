@@ -26,8 +26,6 @@ import (
 	"syscall"
 
 	"github.com/creachadair/ffs/blob"
-	"github.com/creachadair/ffs/file"
-	"github.com/creachadair/ffs/file/root"
 	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/ffuse"
 
@@ -44,14 +42,16 @@ var (
 
 func init() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `Usage: %[1]s -mount path -store addr -root key
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-read-only] -store addr -mount path -root key[/path...]
 
-Mount a FFS filesystem via FUSE at the specified path, using the blob store
-described by addr.
+Mount a FFS filesystem via FUSE at the specified -mount path, using the blob
+store described by addr. The starting point for the mount may be the name of a
+root pointer, or a path relative to a root pointer, or a specific storage key
+prefixed by "@".
 
-If the FFS_STORE environment variable is set, it is used to choose the store;
-if the -store flag is set, it is used. Otherwise the default store from the
-FFS config file is used or an error is reported.
+If -store is not set, the FFS_STORE environment variable is used as a default
+if it is defined; otherwise the default from the FFS config file is used or an
+error is reported.
 
 Options:
 `, filepath.Base(os.Args[0]))
@@ -86,19 +86,17 @@ func main() {
 	}
 	defer blob.CloseStore(ctx, cas)
 
-	// Load the designated root and extract its file.
-	roots := config.Roots(cas)
-	rootPointer, err := root.Open(ctx, roots, *rootKey)
+	pi, err := config.OpenPath(ctx, cas, *rootKey)
 	if err != nil {
-		log.Fatalf("Loading root pointer: %v", err)
+		log.Fatalf("Loading root path: %v", err)
 	}
-	rootFile, err := rootPointer.File(ctx, cas)
-	if err != nil {
-		log.Fatalf("Loading root file: %v", err)
-	}
-	log.Printf("Loaded filesystem from %q (%x)", *rootKey, rootPointer.FileKey)
-	if rootPointer.Description != "" {
-		log.Printf("| Description: %s", rootPointer.Description)
+	if pi.Root != nil {
+		log.Printf("Loaded filesystem from %q (%x)", pi.RootKey, pi.FileKey)
+		if pi.Root.Description != "" {
+			log.Printf("| Description %s", pi.Root.Description)
+		}
+	} else {
+		log.Printf("Loaded filesystem at %x (no root pointer)", pi.FileKey)
 	}
 
 	// Mount the filesystem and serve from our filesystem root.
@@ -118,7 +116,7 @@ func main() {
 	}
 
 	server := fs.New(c, nil)
-	fsys := ffuse.New(rootFile, server)
+	fsys := ffuse.New(pi.File, server)
 	done := make(chan error, 1)
 	go func() { defer close(done); done <- fs.Serve(c, fsys) }()
 
@@ -148,21 +146,9 @@ func main() {
 	} else {
 		log.Print("Closed fuse connection")
 	}
-	flushRoot(ctx, rootFile, rootPointer)
-}
-
-func flushRoot(ctx context.Context, rf *file.File, rp *root.Root) {
-	// At exit, flush and update the root pointer.
-	key, err := rf.Flush(ctx)
+	rk, err := pi.Flush(ctx)
 	if err != nil {
-		log.Fatalf("Flushing root: %v", err)
+		log.Fatalf("Flushing file data: %v", err)
 	}
-	if key != rp.FileKey {
-		rp.IndexKey = "" // invalidate the index, if there is one
-	}
-	rp.FileKey = key
-	if err := rp.Save(ctx, *rootKey, true); err != nil {
-		log.Fatalf("Updating root pointer: %v", err)
-	}
-	fmt.Printf("%x\n", key)
+	fmt.Printf("%x\n", rk)
 }
