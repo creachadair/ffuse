@@ -37,6 +37,7 @@ var (
 	storeAddr  = flag.String("store", os.Getenv("FFS_STORE"), "Blob storage address (required)")
 	mountPoint = flag.String("mount", "", "Path of mount point (required)")
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
+	doDebugLog = flag.Bool("debug", false, "Enable debug logging (warning: noisy)")
 	rootKey    = flag.String("root", "", "Storage key of root pointer")
 )
 
@@ -77,6 +78,9 @@ func main() {
 	}
 	if *storeAddr != "" {
 		cfg.DefaultStore = *storeAddr
+	}
+	if *doDebugLog {
+		cfg.EnableDebugLogging = true
 	}
 
 	ctx := context.Background()
