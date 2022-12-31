@@ -123,6 +123,9 @@ func main() {
 	// Set up auto-flush if it was requested.
 	var fsOpts *ffuse.Options
 	if *autoFlush > 0 {
+		if *doReadOnly {
+			log.Print("WARNING: It does not make sense to -auto-flush with -read-only")
+		}
 		fsOpts = &ffuse.Options{
 			AutoFlushInterval: *autoFlush,
 			OnAutoFlush: func(f *file.File, err error) {
