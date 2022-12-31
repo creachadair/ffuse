@@ -35,12 +35,14 @@ import (
 )
 
 var (
-	storeAddr  = flag.String("store", os.Getenv("FFS_STORE"), "Blob storage address (required)")
-	mountPoint = flag.String("mount", "", "Path of mount point (required)")
-	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
-	doDebugLog = flag.Bool("debug", false, "Enable debug logging (warning: noisy)")
-	rootKey    = flag.String("root", "", "Storage key of root pointer")
-	autoFlush  = flag.Duration("auto-flush", 0, "Automatically flush the root at this interval")
+	storeAddr   = flag.String("store", os.Getenv("FFS_STORE"), "Blob storage address (required)")
+	mountPoint  = flag.String("mount", "", "Path of mount point (required)")
+	doReadOnly  = flag.Bool("read-only", false, "Mount the filesystem as read-only")
+	doDebugLog  = flag.Bool("debug", false, "Enable debug logging (warning: noisy)")
+	rootKey     = flag.String("root", "", "Storage key of root pointer")
+	autoFlush   = flag.Duration("auto-flush", 0, "Automatically flush the root at this interval")
+	doSigFlush  = flag.Bool("sig-flush", false, "If true, SIGUSR1 will trigger a root flush")
+	doSigUpdate = flag.Bool("sig-update", false, "If true, SIGUSR2 will trigger a root reload")
 )
 
 func init() {
@@ -110,6 +112,7 @@ func main() {
 		fuse.Subtype("ffs"),
 		fuse.VolumeName("FFS"),
 		fuse.NoAppleDouble(),
+		fuse.MaxReadahead(1 << 16),
 	}
 	if *doReadOnly {
 		opts = append(opts, fuse.ReadOnly())
@@ -123,9 +126,6 @@ func main() {
 	// Set up auto-flush if it was requested.
 	var fsOpts *ffuse.Options
 	if *autoFlush > 0 {
-		if *doReadOnly {
-			log.Print("WARNING: It does not make sense to -auto-flush with -read-only")
-		}
 		fsOpts = &ffuse.Options{
 			AutoFlushInterval: *autoFlush,
 			OnAutoFlush: func(f *file.File, err error) {
@@ -135,11 +135,14 @@ func main() {
 				if err != nil {
 					log.Printf("WARNING: Auto-flushing failed: %v", err)
 				} else {
-					log.Print("Auto-flush OK")
+					log.Print("Root auto-flushed to storage: OK")
 				}
 			},
 		}
 		log.Printf("Enabling auto-flush every %v", *autoFlush)
+		if *doReadOnly {
+			log.Print("NOTE: It does not make sense to -auto-flush with -read-only")
+		}
 	}
 
 	server := fs.New(c, nil)
@@ -156,20 +159,10 @@ func main() {
 
 	// Block indefinitely to let the server run, but handle interrupt and
 	// termination signals to unmount and flush the root.
-	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case err := <-done:
-		log.Printf("Server exited: %v", err)
-	case s := <-sig:
-		log.Printf("Received signal: %v", s)
-		log.Printf("Unmounting %q", *mountPoint)
-		if err := fuse.Unmount(*mountPoint); err != nil {
-			log.Printf("Warning: unmount failed: %v", err)
-		}
-	}
+	handleSignals(ctx, done, cas, pi, fsys)
+
 	if err := c.Close(); err != nil {
-		log.Printf("Warning: closing fuse connection failed: %v", err)
+		log.Printf("WARNING: closing fuse connection failed: %v", err)
 	} else {
 		log.Print("Closed fuse connection")
 	}
@@ -178,4 +171,53 @@ func main() {
 		log.Fatalf("Flushing file data: %v", err)
 	}
 	fmt.Printf("%x\n", rk)
+}
+
+func handleSignals(ctx context.Context, done <-chan error, cas blob.CAS, pi *config.PathInfo, fsys *ffuse.FS) {
+	sig := make(chan os.Signal, 4)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
+	for {
+		select {
+		case err := <-done:
+			log.Printf("Server exited: %v", err)
+			return
+
+		case s := <-sig:
+			log.Printf("Received signal: %v", s)
+			switch s {
+			case syscall.SIGUSR1:
+				if !*doSigFlush {
+					log.Print("- Ignoring signal because -sig-flush is false")
+					continue
+				}
+				if _, err := pi.Flush(ctx); err != nil {
+					log.Printf("WARNING: Root flush failed; %v", err)
+				} else {
+					log.Print("Root flushed to storage: OK")
+				}
+				continue
+
+			case syscall.SIGUSR2:
+				if !*doSigUpdate {
+					log.Print("- Ignoring signal because -sig-update is false")
+					continue
+				}
+				npi, err := config.OpenPath(ctx, cas, *rootKey)
+				if err != nil {
+					log.Printf("WARNING: Reloading filesystem root failed: %v", err)
+				} else {
+					*pi = *npi
+					fsys.Update(pi.File)
+					log.Print("Reloaded filesystem root: OK")
+				}
+				continue
+			}
+
+			log.Printf("Unmounting %q", *mountPoint)
+			if err := fuse.Unmount(*mountPoint); err != nil {
+				log.Printf("WARNING: unmount failed: %v", err)
+			}
+		}
+		return
+	}
 }
