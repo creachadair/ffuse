@@ -38,15 +38,15 @@ import (
 // safe for concurrent use by multiple goroutines.
 func New(root *file.File, server *fs.Server, opts *Options) *FS {
 	ctx, cancel := context.WithCancel(context.Background())
-	fs := &FS{
+	fsys := &FS{
 		cancel: cancel,
 		root:   root,
 		server: server,
 	}
 	if d := opts.autoFlushInterval(); d > 0 {
-		go fs.autoflush(ctx, d, opts.onAutoFlush())
+		go fsys.autoflush(ctx, d, opts.onAutoFlush())
 	}
-	return fs
+	return fsys
 }
 
 func (fs *FS) autoflush(ctx context.Context, d time.Duration, notify func(*file.File, error)) {
@@ -72,6 +72,20 @@ func (fs *FS) autoflush(ctx context.Context, d time.Duration, notify func(*file.
 			}()
 		}
 	}
+}
+
+// Update replaces the root of the filesystem with root and invalidates the
+// attribute cache for the root.
+func (fsys *FS) Update(newRoot *file.File) {
+	fsys.μ.Lock()
+	defer fsys.μ.Unlock()
+
+	fsys.server.InvalidateInternalNode(
+		Node{fs: fsys, file: fsys.root},
+		Node{fs: fsys, file: newRoot},
+		func(fs.Node) {},
+	)
+	fsys.root = newRoot
 }
 
 // Options control optional settings for a FS. A nil *Options is valid and
@@ -113,7 +127,11 @@ type FS struct {
 }
 
 // Root implements the fs.FS interface.
-func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root}, nil }
+func (fs *FS) Root() (fs.Node, error) {
+	fs.μ.Lock()
+	defer fs.μ.Unlock()
+	return Node{fs: fs, file: fs.root}, nil
+}
 
 // Destroy implements the fs.FSDestroyer interface.
 func (fs *FS) Destroy() { fs.cancel() }
@@ -161,6 +179,8 @@ func (n Node) Attr(ctx context.Context, attr *fuse.Attr) error {
 // fillAttr populates the fields of attr with stat metadata from the file in n.
 // The caller must hold the filesystem lock.
 func (n Node) fillAttr(attr *fuse.Attr) {
+	attr.Inode = fileInode(n.file)
+
 	nb := n.file.Size()
 	attr.Size = uint64(nb)
 	attr.Blocks = uint64((nb + 511) / 512)
