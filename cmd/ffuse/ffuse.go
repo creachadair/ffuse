@@ -26,6 +26,7 @@ import (
 	"syscall"
 
 	"github.com/creachadair/ffs/blob"
+	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/ffuse"
 
@@ -39,6 +40,7 @@ var (
 	doReadOnly = flag.Bool("read-only", false, "Mount the filesystem as read-only")
 	doDebugLog = flag.Bool("debug", false, "Enable debug logging (warning: noisy)")
 	rootKey    = flag.String("root", "", "Storage key of root pointer")
+	autoFlush  = flag.Duration("auto-flush", 0, "Automatically flush the root at this interval")
 )
 
 func init() {
@@ -62,7 +64,6 @@ Options:
 
 func main() {
 	flag.Parse()
-	log.SetFlags(0)
 	log.SetPrefix("[ffuse] ")
 
 	switch {
@@ -119,8 +120,27 @@ func main() {
 		log.Fatalf("Mount failed: %v", err)
 	}
 
+	// Set up auto-flush if it was requested.
+	var fsOpts *ffuse.Options
+	if *autoFlush > 0 {
+		fsOpts = &ffuse.Options{
+			AutoFlushInterval: *autoFlush,
+			OnAutoFlush: func(f *file.File, err error) {
+				if err == nil {
+					_, err = pi.Flush(ctx)
+				}
+				if err != nil {
+					log.Printf("WARNING: Auto-flushing failed: %v", err)
+				} else {
+					log.Print("Auto-flush OK")
+				}
+			},
+		}
+		log.Printf("Enabling auto-flush every %v", *autoFlush)
+	}
+
 	server := fs.New(c, nil)
-	fsys := ffuse.New(pi.File, server)
+	fsys := ffuse.New(pi.File, server, fsOpts)
 	done := make(chan error, 1)
 	go func() { defer close(done); done <- fs.Serve(c, fsys) }()
 

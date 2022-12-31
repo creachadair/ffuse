@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"log"
 	"os"
 	"reflect"
 	"sync"
@@ -35,12 +36,76 @@ import (
 
 // New constructs a new FS with the given root file.  The resulting value is
 // safe for concurrent use by multiple goroutines.
-func New(root *file.File, server *fs.Server) *FS { return &FS{root: root, server: server} }
+func New(root *file.File, server *fs.Server, opts *Options) *FS {
+	ctx, cancel := context.WithCancel(context.Background())
+	fs := &FS{
+		cancel: cancel,
+		root:   root,
+		server: server,
+	}
+	if d := opts.autoFlushInterval(); d > 0 {
+		go fs.autoflush(ctx, d, opts.onAutoFlush())
+	}
+	return fs
+}
+
+func (fs *FS) autoflush(ctx context.Context, d time.Duration, notify func(*file.File, error)) {
+	t := time.NewTicker(d)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Print("Stopping auto-flush routine")
+			return
+		case <-t.C:
+			func() {
+				fs.μ.Lock()
+				defer func() {
+					fs.μ.Unlock()
+					if x := recover(); x != nil {
+						log.Printf("WARNING: panic during autoflush (suppressed): %v", x)
+					}
+				}()
+
+				_, err := fs.root.Flush(ctx)
+				notify(fs.root, err)
+			}()
+		}
+	}
+}
+
+// Options control optional settings for a FS. A nil *Options is valid and
+// provides default values as described.
+type Options struct {
+	// If this is positive, the root of the filesystem will be flushed
+	// periodically at this interval.
+	AutoFlushInterval time.Duration
+
+	// If this is set, it will be called after an auto-flush occurs, passing the
+	// root file that was just flushed and the error result (if any).  The
+	// callback is invoked with a write lock held.
+	OnAutoFlush func(*file.File, error)
+}
+
+func (o *Options) autoFlushInterval() time.Duration {
+	if o == nil {
+		return 0
+	}
+	return o.AutoFlushInterval
+}
+
+func (o *Options) onAutoFlush() func(*file.File, error) {
+	if o == nil || o.OnAutoFlush == nil {
+		return func(*file.File, error) {}
+	}
+	return o.OnAutoFlush
+}
 
 // FS implements the fs.FS interface.
 type FS struct {
 	// All operations on any node of the filesystem must hold μ.
 	// Operations that modify the contents of the tree must hold a write lock.
+	cancel context.CancelFunc
 
 	μ      sync.RWMutex
 	root   *file.File
@@ -49,6 +114,9 @@ type FS struct {
 
 // Root implements the fs.FS interface.
 func (fs *FS) Root() (fs.Node, error) { return Node{fs: fs, file: fs.root}, nil }
+
+// Destroy implements the fs.FSDestroyer interface.
+func (fs *FS) Destroy() { fs.cancel() }
 
 // A Node implements the fs.Node interface along with other node-related
 // interfaces from the github.com/seaweedfs/fuse/fs package.
