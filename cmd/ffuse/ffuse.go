@@ -84,6 +84,9 @@ func main() {
 	}
 	if *doDebugLog {
 		cfg.EnableDebugLogging = true
+		fuse.Debug = func(arg any) {
+			log.Printf("FUSE: %v", arg)
+		}
 	}
 
 	ctx := context.Background()
