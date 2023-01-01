@@ -76,16 +76,12 @@ func (fs *FS) autoflush(ctx context.Context, d time.Duration, notify func(*file.
 
 // Update replaces the root of the filesystem with root and invalidates the
 // attribute cache for the root.
-func (fsys *FS) Update(newRoot *file.File) {
-	fsys.μ.Lock()
-	defer fsys.μ.Unlock()
+func (fs *FS) Update(newRoot *file.File) {
+	fs.μ.Lock()
+	defer fs.μ.Unlock()
 
-	fsys.server.InvalidateInternalNode(
-		Node{fs: fsys, file: fsys.root},
-		Node{fs: fsys, file: newRoot},
-		func(fs.Node) {},
-	)
-	fsys.root = newRoot
+	fs.rnode.file = newRoot
+	fs.server.InvalidateNodeAttr(fs.rnode)
 }
 
 // Options control optional settings for a FS. A nil *Options is valid and
@@ -123,6 +119,7 @@ type FS struct {
 
 	μ      sync.RWMutex
 	root   *file.File
+	rnode  *Node
 	server *fs.Server
 }
 
@@ -130,7 +127,8 @@ type FS struct {
 func (fs *FS) Root() (fs.Node, error) {
 	fs.μ.Lock()
 	defer fs.μ.Unlock()
-	return Node{fs: fs, file: fs.root}, nil
+	fs.rnode = &Node{fs: fs, file: fs.root}
+	return fs.rnode, nil
 }
 
 // Destroy implements the fs.FSDestroyer interface.
