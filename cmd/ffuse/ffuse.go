@@ -103,7 +103,7 @@ func main() {
 	if pi.Root != nil {
 		log.Printf("Loaded filesystem from %q (%x)", pi.RootKey, pi.FileKey)
 		if pi.Root.Description != "" {
-			log.Printf("| Description %s", pi.Root.Description)
+			log.Printf("| Description: %q", pi.Root.Description)
 		}
 	} else {
 		log.Printf("Loaded filesystem at %x (no root pointer)", pi.FileKey)
@@ -169,11 +169,13 @@ func main() {
 	} else {
 		log.Print("Closed fuse connection")
 	}
-	rk, err := pi.Flush(ctx)
-	if err != nil {
-		log.Fatalf("Flushing file data: %v", err)
+	if !*doReadOnly {
+		rk, err := pi.Flush(ctx)
+		if err != nil {
+			log.Fatalf("Flushing file data: %v", err)
+		}
+		fmt.Printf("%x\n", rk)
 	}
-	fmt.Printf("%x\n", rk)
 }
 
 func handleSignals(ctx context.Context, done <-chan error, cas blob.CAS, pi *config.PathInfo, fsys *ffuse.FS) {
