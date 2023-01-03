@@ -68,7 +68,7 @@ the following operations:
 
    GET /status     -- return a JSON blob of filesystem status
    GET /flush      -- as /status, but also flushes the root to storage
-   PUT /root/:key  -- update the filesystem root to the specified key
+   POST /root/:key -- update the filesystem root to the specified key
 
 Updating the filesystem changes what is visible through the mount point.
 You can effect a "reload" of the filesystem contents by putting the same value

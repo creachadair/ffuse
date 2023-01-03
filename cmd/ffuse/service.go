@@ -254,7 +254,7 @@ type statusReply struct {
 }
 
 func (s *Service) handleRoot(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "PUT" {
+	if req.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
