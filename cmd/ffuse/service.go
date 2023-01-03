@@ -190,7 +190,7 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			log.Print("Stopping auto-flush routine")
 			return
 		case <-t.C:
-			oldKey := s.Path.Load().Root.FileKey
+			oldKey := s.Path.Load().BaseKey
 			newKey, err := s.flushRoot(ctx)
 			if err != nil {
 				log.Printf("WARNING: Error flushing root: %v", err)
@@ -217,8 +217,7 @@ func (s *Service) handleStatus(w http.ResponseWriter, req *http.Request) {
 	}
 	doFlush := req.URL.Path == "/flush"
 
-	pi := s.Path.Load()
-	rootKey, storageKey := pi.RootKey, pi.Root.FileKey
+	storageKey := s.Path.Load().BaseKey
 	var oldKey string
 	if doFlush {
 		if nk, err := s.flushRoot(req.Context()); err != nil {
@@ -234,7 +233,7 @@ func (s *Service) handleStatus(w http.ResponseWriter, req *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, statusReply{
 		MountPath:  s.MountPath,
-		RootKey:    rootKey,
+		Root:       effectiveRootKey(s.Path.Load()),
 		Store:      s.StoreSpec,
 		ReadOnly:   s.ReadOnly,
 		AutoFlush:  autoFlush,
@@ -245,7 +244,7 @@ func (s *Service) handleStatus(w http.ResponseWriter, req *http.Request) {
 
 type statusReply struct {
 	MountPath  string `json:"mountPath"`
-	RootKey    string `json:"rootKey"`
+	Root       any    `json:"root"`
 	Store      string `json:"store"`
 	ReadOnly   bool   `json:"readOnly"`
 	AutoFlush  string `json:"autoFlush,omitempty"`
@@ -266,7 +265,7 @@ func (s *Service) handleRoot(w http.ResponseWriter, req *http.Request) {
 	pi, err := config.OpenPath(req.Context(), s.Store, newRoot)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, struct {
-			K string `json:"rootKey"`
+			K string `json:"root"`
 			E string `json:"error"`
 		}{K: newRoot, E: err.Error()})
 		return
@@ -275,7 +274,7 @@ func (s *Service) handleRoot(w http.ResponseWriter, req *http.Request) {
 	s.FS.Update(pi.File)
 	log.Printf("Filesystem root updated to %q (%x)", newRoot, pi.FileKey)
 	writeJSON(w, http.StatusOK, struct {
-		K string `json:"rootKey"`
+		K string `json:"root"`
 		S []byte `json:"storageKey"`
 	}{K: newRoot, S: []byte(pi.FileKey)})
 }
@@ -290,4 +289,11 @@ func writeJSON(w http.ResponseWriter, code int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
+}
+
+func effectiveRootKey(pi *config.PathInfo) any {
+	if pi.RootKey == "" {
+		return []byte(pi.BaseKey)
+	}
+	return pi.RootKey
 }
