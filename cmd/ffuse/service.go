@@ -47,8 +47,6 @@ type Service struct {
 // Init checks the settings, and loads the initial filesystem state from the
 // specified blob store. It terminates the process if any of these steps fail.
 func (s *Service) Init(ctx context.Context) {
-	var err error
-
 	// Check flags for consistency.
 	if s.MountPath == "" {
 		log.Fatal("You must set a non-empty -mount path")
@@ -57,6 +55,8 @@ func (s *Service) Init(ctx context.Context) {
 	} else if s.ReadOnly && s.AutoFlush > 0 {
 		log.Fatal("You may not enable -auto-flush with -read-only")
 	}
+
+	var err error
 
 	// Load configuration file.
 	s.Config, err = config.Load(config.Path())
