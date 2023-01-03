@@ -170,7 +170,7 @@ func (s *Service) Shutdown(ctx context.Context) {
 		log.Print("Closed fuse connection")
 	}
 	if !s.ReadOnly {
-		pi := s.Path.Swap(nil)
+		pi := *s.Path.Load()
 		rk, err := pi.Flush(ctx)
 		if err != nil {
 			blob.CloseStore(ctx, s.Store)
@@ -190,27 +190,22 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			log.Print("Stopping auto-flush routine")
 			return
 		case <-t.C:
-			oldKey, newKey, err := s.flushRoot(ctx)
+			oldKey := s.Path.Load().Root.FileKey
+			newKey, err := s.flushRoot(ctx)
 			if err != nil {
 				log.Printf("WARNING: Error flushing root: %v", err)
-			} else if newKey != oldKey {
+			} else if oldKey != newKey {
 				log.Printf("Root flushed, storage key is now %x", newKey)
 			}
 		}
 	}
 }
 
-func (s *Service) flushRoot(ctx context.Context) (oldKey, newKey string, err error) {
+func (s *Service) flushRoot(ctx context.Context) (newKey string, err error) {
 	// We need to lock out filesystem operations while we do this, since it may
 	// update state deeper inside the tree.
 	s.FS.WithRoot(func(_ *file.File) {
-		pi := s.Path.Load()
-		if pi == nil {
-			err = errors.New("current path not found")
-			return
-		}
-		oldKey = pi.Root.FileKey
-		newKey, err = pi.Flush(ctx)
+		newKey, err = s.Path.Load().Flush(ctx)
 	})
 	return
 }
@@ -222,17 +217,15 @@ func (s *Service) handleStatus(w http.ResponseWriter, req *http.Request) {
 	}
 	doFlush := req.URL.Path == "/flush"
 
-	var oldKey, newKey string
+	pi := s.Path.Load()
+	rootKey, storageKey := pi.RootKey, pi.Root.FileKey
+	var oldKey string
 	if doFlush {
-		ok, nk, err := s.flushRoot(req.Context())
-		if err != nil {
+		if nk, err := s.flushRoot(req.Context()); err != nil {
 			log.Printf("WARNING: Error flushing root: %v", err)
-		} else if ok != nk {
-			oldKey = ok
+		} else if nk != storageKey {
+			oldKey, storageKey = storageKey, nk
 		}
-		newKey = nk
-	} else if pi := s.Path.Load(); pi != nil {
-		newKey = pi.FileKey
 	}
 
 	var autoFlush string
@@ -241,12 +234,12 @@ func (s *Service) handleStatus(w http.ResponseWriter, req *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, statusReply{
 		MountPath:  s.MountPath,
-		RootKey:    s.RootKey,
+		RootKey:    rootKey,
 		Store:      s.StoreSpec,
 		ReadOnly:   s.ReadOnly,
 		AutoFlush:  autoFlush,
 		OldKey:     []byte(oldKey),
-		StorageKey: []byte(newKey),
+		StorageKey: []byte(storageKey),
 	})
 }
 
