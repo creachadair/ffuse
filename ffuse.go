@@ -262,7 +262,7 @@ func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (nod
 		if n.file.Child().Has(req.NewName) {
 			return fuse.EEXIST
 		}
-		tgt := old.(Node)
+		tgt := nodeType(old)
 		if tgt.file.Stat().Mode.IsDir() {
 			return fuse.EPERM
 		}
@@ -429,7 +429,7 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 			return err
 		}
 
-		dir := dir.(Node)
+		dir := nodeType(dir)
 		if tgt, err := dir.file.Open(ctx, req.NewName); err == nil {
 			if tgt.Stat().Mode.IsDir() {
 				return fuse.EEXIST // can't replace an existing directory
@@ -656,6 +656,17 @@ func (h Handle) flush(ctx context.Context) error {
 // This is safe because a location cannot become another file until after a
 // successful GC, which means the old one is no longer referenced.
 func fileInode(f *file.File) uint64 { return uint64(reflect.ValueOf(f).Pointer()) }
+
+func nodeType(n fs.Node) Node {
+	switch t := n.(type) {
+	case *Node:
+		return *t
+	case Node:
+		return t
+	default:
+		return Node{}
+	}
+}
 
 // An inval represnts an attribute or entry invalidation request we need to
 // make to FUSE.
