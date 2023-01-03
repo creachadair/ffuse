@@ -19,13 +19,18 @@ import (
 	"github.com/seaweedfs/fuse/fs"
 )
 
+const (
+	debugFFS  = 1
+	debugFUSE = 2
+)
+
 // Service holds the state of the mounted filesystem.
 type Service struct {
 	MountPath string        // path of mount point
 	RootKey   string        // root or file key
 	StoreSpec string        // blob store spec
 	ReadOnly  bool          // whether the mount is read-only
-	DebugLog  bool          // whether to enable debug logging
+	DebugLog  int           // debug logging level
 	AutoFlush time.Duration // auto-flush interval (0=disabled)
 
 	// Fuse library settings.
@@ -69,8 +74,10 @@ func (s *Service) Init(ctx context.Context) {
 		// Copy the default so it shows up in /status.
 		s.StoreSpec = s.Config.DefaultStore
 	}
-	if s.DebugLog {
+	if s.DebugLog&debugFFS != 0 {
 		s.Config.EnableDebugLogging = true
+	}
+	if s.DebugLog&debugFUSE != 0 {
 		fuse.Debug = func(arg any) { log.Printf("FUSE: %v", arg) }
 	}
 

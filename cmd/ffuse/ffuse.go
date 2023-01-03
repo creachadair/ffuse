@@ -47,7 +47,7 @@ func init() {
 	flag.StringVar(&svc.StoreSpec, "store", os.Getenv("FFS_STORE"), "Blob storage address (required)")
 	flag.StringVar(&svc.MountPath, "mount", "", "Path of mount point (required)")
 	flag.BoolVar(&svc.ReadOnly, "read-only", false, "Mount the filesystem as read-only")
-	flag.BoolVar(&svc.DebugLog, "debug", false, "Enable debug logging (warning: noisy)")
+	flag.IntVar(&svc.DebugLog, "debug", 0, "Set debug logging level (1=ffs, 2=fuse, 3=both)")
 	flag.StringVar(&svc.RootKey, "root", "", "Storage key of root pointer")
 	flag.DurationVar(&svc.AutoFlush, "auto-flush", 0, "Automatically flush the root at this interval")
 
