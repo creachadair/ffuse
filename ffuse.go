@@ -22,7 +22,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"log"
 	"os"
 	"reflect"
 	"sync"
@@ -37,86 +36,43 @@ import (
 // New constructs a new FS with the given root file.  The resulting value is
 // safe for concurrent use by multiple goroutines.
 func New(root *file.File, server *fs.Server, opts *Options) *FS {
-	ctx, cancel := context.WithCancel(context.Background())
-	fsys := &FS{
-		cancel: cancel,
-		root:   root,
-		server: server,
-	}
-	if d := opts.autoFlushInterval(); d > 0 {
-		go fsys.autoflush(ctx, d, opts.onAutoFlush())
-	}
-	return fsys
+	fs := &FS{root: root, server: server}
+	fs.rnode = &Node{fs: fs, file: fs.root}
+	return fs
 }
 
-func (fs *FS) autoflush(ctx context.Context, d time.Duration, notify func(*file.File, error)) {
-	t := time.NewTicker(d)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			log.Print("Stopping auto-flush routine")
-			return
-		case <-t.C:
-			func() {
-				fs.μ.Lock()
-				defer func() {
-					fs.μ.Unlock()
-					if x := recover(); x != nil {
-						log.Printf("WARNING: panic during autoflush (suppressed): %v", x)
-					}
-				}()
+// WithRoot calls f with the root file of the filesystem, while holding the
+// filesystem lock exclusively.
+func (fs *FS) WithRoot(f func(*file.File)) {
+	inv := fs.newInvalSet()
+	defer inv.process()
 
-				_, err := fs.root.Flush(ctx)
-				notify(fs.root, err)
-			}()
-		}
-	}
+	fs.μ.Lock()
+	defer fs.μ.Unlock()
+	inv.attr(fs.rnode)
+	f(fs.root)
 }
 
 // Update replaces the root of the filesystem with root and invalidates the
 // attribute cache for the root.
 func (fs *FS) Update(newRoot *file.File) {
+	inv := fs.newInvalSet()
+	defer inv.process()
+
 	fs.μ.Lock()
 	defer fs.μ.Unlock()
-
 	fs.rnode.file = newRoot
-	fs.server.InvalidateNodeAttr(fs.rnode)
+	inv.attr(fs.rnode)
 }
 
 // Options control optional settings for a FS. A nil *Options is valid and
 // provides default values as described.
-type Options struct {
-	// If this is positive, the root of the filesystem will be flushed
-	// periodically at this interval.
-	AutoFlushInterval time.Duration
-
-	// If this is set, it will be called after an auto-flush occurs, passing the
-	// root file that was just flushed and the error result (if any).  The
-	// callback is invoked with a write lock held.
-	OnAutoFlush func(*file.File, error)
-}
-
-func (o *Options) autoFlushInterval() time.Duration {
-	if o == nil {
-		return 0
-	}
-	return o.AutoFlushInterval
-}
-
-func (o *Options) onAutoFlush() func(*file.File, error) {
-	if o == nil || o.OnAutoFlush == nil {
-		return func(*file.File, error) {}
-	}
-	return o.OnAutoFlush
-}
+type Options struct{}
 
 // FS implements the fs.FS interface.
 type FS struct {
 	// All operations on any node of the filesystem must hold μ.
 	// Operations that modify the contents of the tree must hold a write lock.
-	cancel context.CancelFunc
-
 	μ      sync.RWMutex
 	root   *file.File
 	rnode  *Node
@@ -125,14 +81,10 @@ type FS struct {
 
 // Root implements the fs.FS interface.
 func (fs *FS) Root() (fs.Node, error) {
-	fs.μ.Lock()
-	defer fs.μ.Unlock()
-	fs.rnode = &Node{fs: fs, file: fs.root}
+	fs.μ.RLock()
+	defer fs.μ.RUnlock()
 	return fs.rnode, nil
 }
-
-// Destroy implements the fs.FSDestroyer interface.
-func (fs *FS) Destroy() { fs.cancel() }
 
 // A Node implements the fs.Node interface along with other node-related
 // interfaces from the github.com/seaweedfs/fuse/fs package.
@@ -304,6 +256,8 @@ func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse
 
 // Link implements fs.NodeLinker.
 func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (node fs.Node, err error) {
+	inv := n.fs.newInvalSet()
+	defer inv.process()
 	err = n.writeLock(func() error {
 		if n.file.Child().Has(req.NewName) {
 			return fuse.EEXIST
@@ -314,8 +268,8 @@ func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (nod
 		}
 
 		n.file.Child().Set(req.NewName, tgt.file)
-		n.fs.server.InvalidateEntry(n, req.NewName)
-		n.fs.server.InvalidateNodeAttr(n)
+		inv.entry(n, req.NewName)
+		inv.attr(n)
 		node = tgt
 		defer n.touchIfOK(nil)
 		return nil
@@ -417,6 +371,8 @@ func (n Node) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (target s
 
 // Remove implements fs.NodeRemover.
 func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
+	inv := n.fs.newInvalSet()
+	defer inv.process()
 	return n.writeLock(func() error {
 		f, err := n.file.Open(ctx, req.Name)
 		if errors.Is(err, file.ErrChildNotFound) {
@@ -435,8 +391,8 @@ func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 			return fuse.EPERM // rmdir(non-directory)
 		}
 		n.file.Child().Remove(req.Name)
-		n.fs.server.InvalidateEntry(n, req.Name)
-		n.fs.server.InvalidateNodeAttr(n)
+		inv.entry(n, req.Name)
+		inv.attr(n)
 		return nil
 	})
 }
@@ -461,6 +417,8 @@ func (n Node) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) err
 
 // Rename implements fs.NodeRenamer.
 func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) error {
+	inv := n.fs.newInvalSet()
+	defer inv.process()
 	return n.writeLock(func() error {
 		// N.B. Order matters here, since n and dir may be the same node.
 
@@ -494,11 +452,11 @@ func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) 
 
 		defer n.touchIfOK(nil)
 		n.file.Child().Remove(req.OldName) // remove from the old directory
-		n.fs.server.InvalidateEntry(n, req.OldName)
-		n.fs.server.InvalidateNodeAttr(n)
+		inv.entry(n, req.OldName)
+		inv.attr(n)
 		dir.file.Child().Set(req.NewName, src) // add to the new directory
-		n.fs.server.InvalidateEntry(dir, req.NewName)
-		n.fs.server.InvalidateNodeAttr(dir)
+		inv.entry(dir, req.NewName)
+		inv.attr(dir)
 		return nil
 	})
 }
@@ -648,7 +606,9 @@ func (h Handle) Flush(ctx context.Context, req *fuse.FlushRequest) error { retur
 // Release implements fs.HandleReleaser.
 func (h Handle) Release(ctx context.Context, req *fuse.ReleaseRequest) error {
 	if h.writable || h.append {
-		h.fs.server.InvalidateNodeAttr(h.Node)
+		inv := h.fs.newInvalSet()
+		defer inv.process()
+		inv.attr(h.Node)
 	}
 	return h.flush(ctx)
 }
@@ -696,3 +656,50 @@ func (h Handle) flush(ctx context.Context) error {
 // This is safe because a location cannot become another file until after a
 // successful GC, which means the old one is no longer referenced.
 func fileInode(f *file.File) uint64 { return uint64(reflect.ValueOf(f).Pointer()) }
+
+// An inval represnts an attribute or entry invalidation request we need to
+// make to FUSE.
+type inval struct {
+	fs.Node
+	entryName string
+}
+
+// newInvalSet creates a new empty invalidation set. A caller that needs to
+// invalidate nodes should populate the set and defer a call to the process
+// method before returning.
+//
+// Invalidations cannot safely be processed during the main request flow, as
+// FUSE may upcall into the driver, which will be blocked by the unresolved
+// service routine that wants to do the invalidations. The invalSet handles
+// this by processing the invalidations in a separate goroutine.
+func (fs *FS) newInvalSet() *invalSet { return &invalSet{server: fs.server} }
+
+type invalSet struct {
+	server  *fs.Server
+	entries []inval
+}
+
+// entry adds an invalidation for a directory entry.
+func (v *invalSet) entry(n fs.Node, entry string) {
+	v.entries = append(v.entries, inval{n, entry})
+}
+
+// attr adds an invalidation for node stat.
+func (v *invalSet) attr(n fs.Node) {
+	v.entries = append(v.entries, inval{Node: n})
+}
+
+func (v *invalSet) process() {
+	if len(v.entries) == 0 {
+		return // nothing to do
+	}
+	go func() {
+		for _, e := range v.entries {
+			if e.entryName != "" {
+				v.server.InvalidateEntry(e.Node, e.entryName)
+			} else {
+				v.server.InvalidateNodeAttr(e.Node)
+			}
+		}
+	}()
+}
