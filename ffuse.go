@@ -618,7 +618,8 @@ func (h Handle) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	// N.B. This requires a write lock because paging in children updates caches.
 	var elts []fuse.Dirent
 	err := h.writeLock(func() error {
-		for _, name := range h.file.Child().Names() {
+		elts = make([]fuse.Dirent, h.file.Child().Len())
+		for i, name := range h.file.Child().Names() {
 			kid, err := h.file.Open(ctx, name)
 			if err != nil {
 				return err
@@ -632,11 +633,11 @@ func (h Handle) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 			case m&os.ModeSymlink != 0:
 				ktype = fuse.DT_Link
 			}
-			elts = append(elts, fuse.Dirent{
+			elts[i] = fuse.Dirent{
 				Inode: fileInode(kid),
 				Name:  name,
 				Type:  ktype,
-			})
+			}
 		}
 		return nil
 	})
