@@ -25,22 +25,12 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
-
-	"github.com/seaweedfs/fuse"
 )
 
 var (
 	serveAddr = flag.String("listen", "", "Status service address")
 
-	svc = &Service{
-		MountOptions: []fuse.MountOption{
-			fuse.FSName("ffs"),
-			fuse.Subtype("ffs"),
-			fuse.VolumeName("FFS"),
-			fuse.NoAppleDouble(),
-			fuse.MaxReadahead(1 << 16),
-		},
-	}
+	svc = &Service{MountOptions: fuseMountOptions}
 )
 
 func init() {
