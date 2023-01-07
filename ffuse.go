@@ -131,7 +131,7 @@ func (n Node) Attr(ctx context.Context, attr *fuse.Attr) error {
 func (n Node) fillAttr(attr *fuse.Attr) {
 	attr.Inode = fileInode(n.file)
 
-	nb := n.file.Size()
+	nb := n.file.Data().Size()
 	attr.Size = uint64(nb)
 	attr.Blocks = uint64((nb + 511) / 512)
 
@@ -150,9 +150,9 @@ func (n Node) fillAttr(attr *fuse.Attr) {
 // The caller must hold the filesystem write lock.
 func (n Node) touchIfOK(err error) {
 	if err == nil {
-		n.file.Stat().Edit(func(stat *file.Stat) {
-			stat.ModTime = time.Now()
-		}).Update()
+		stat := n.file.Stat()
+		stat.ModTime = time.Now()
+		stat.Update()
 	}
 }
 
@@ -242,10 +242,11 @@ func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse
 
 	// Other attributes require only a read lock.
 	return n.readLock(func() error {
-		val, ok := n.file.XAttr().Get(req.Name)
-		if !ok {
+		xa := n.file.XAttr()
+		if !xa.Has(req.Name) {
 			return xattrErrnoNotFound
 		}
+		val := xa.Get(req.Name)
 		if cap := int(req.Size); cap > 0 && cap < len(val) {
 			val = val[:cap]
 		}
@@ -294,9 +295,9 @@ func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fu
 	//add(ffsStorageKeyHex)
 
 	return n.readLock(func() error {
-		n.file.XAttr().List(func(key, _ string) {
+		for _, key := range n.file.XAttr().Names() {
 			add(key)
-		})
+		}
 		return nil
 	})
 }
@@ -359,7 +360,7 @@ func (n Node) Open(ctx context.Context, req *fuse.OpenRequest, rsp *fuse.OpenRes
 // Readlink implements fs.NodeReadlinker.
 func (n Node) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (target string, err error) {
 	err = n.readLock(func() error {
-		buf := make([]byte, int(n.file.Size()))
+		buf := make([]byte, int(n.file.Data().Size()))
 		if _, err := n.file.ReadAt(ctx, buf, 0); err != nil {
 			return err
 		}
@@ -404,7 +405,7 @@ func (n Node) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) err
 	}
 	return n.writeLock(func() error {
 		x := n.file.XAttr()
-		if _, ok := x.Get(req.Name); !ok {
+		if !x.Has(req.Name) {
 			return xattrErrnoNotFound
 		}
 
@@ -473,23 +474,23 @@ func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.S
 				return err
 			}
 		}
-		n.file.Stat().Edit(func(s *file.Stat) {
-			if req.Valid.Gid() {
-				s.GroupID = int(req.Gid)
-			}
-			if req.Valid.Mode() {
-				s.Mode = req.Mode
-			}
-			if req.Valid.Mtime() {
-				s.ModTime = req.Mtime
-			}
-			if req.Valid.MtimeNow() {
-				s.ModTime = time.Now()
-			}
-			if req.Valid.Uid() {
-				s.OwnerID = int(req.Uid)
-			}
-		}).Update()
+		s := n.file.Stat()
+		if req.Valid.Gid() {
+			s.GroupID = int(req.Gid)
+		}
+		if req.Valid.Mode() {
+			s.Mode = req.Mode
+		}
+		if req.Valid.Mtime() {
+			s.ModTime = req.Mtime
+		}
+		if req.Valid.MtimeNow() {
+			s.ModTime = time.Now()
+		}
+		if req.Valid.Uid() {
+			s.OwnerID = int(req.Uid)
+		}
+		s.Update()
 		n.fillAttr(&rsp.Attr)
 		return nil
 	})
@@ -504,7 +505,7 @@ func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
 	}
 	return n.writeLock(func() error {
 		x := n.file.XAttr()
-		if _, ok := x.Get(req.Name); ok {
+		if x.Has(req.Name) {
 			if req.Flags&xattrCreate != 0 {
 				return fuse.EEXIST // create, but already exists
 			}
@@ -591,7 +592,7 @@ func (h Handle) Write(ctx context.Context, req *fuse.WriteRequest, rsp *fuse.Wri
 		}
 		offset := req.Offset
 		if h.append {
-			offset = h.file.Size() // ignore the requested offset for append-only files
+			offset = h.file.Data().Size() // ignore the requested offset for append-only files
 		}
 		nw, err := h.file.WriteAt(ctx, req.Data, offset)
 		defer h.touchIfOK(err)
