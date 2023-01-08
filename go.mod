@@ -3,8 +3,8 @@ module github.com/creachadair/ffuse
 go 1.18
 
 require (
-	github.com/creachadair/ffs v0.0.0-20230107202512-8a08f708a9cd
-	github.com/creachadair/ffstools v0.0.0-20230107202857-6efd13212c92
+	github.com/creachadair/ffs v0.0.0-20230107223849-3ef148a6bbfd
+	github.com/creachadair/ffstools v0.0.0-20230107223940-d0b634473ee6
 	github.com/seaweedfs/fuse v1.2.2
 )
 
