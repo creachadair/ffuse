@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/creachadair/ffs v0.0.0-20230114213900-b3edb6d7b979
-	github.com/creachadair/ffstools v0.0.0-20230115162021-f10d704fa4bb
+	github.com/creachadair/ffstools v0.0.0-20230116214405-b7b00bfc1bba
 	github.com/seaweedfs/fuse v1.2.2
 )
 

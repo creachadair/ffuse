@@ -47,7 +47,7 @@ type Service struct {
 
 	// Blob storage.
 	Config *config.Settings
-	Store  blob.CAS
+	Store  config.CAS
 	Path   atomic.Pointer[config.PathInfo]
 }
 
@@ -316,7 +316,7 @@ func (s *Service) handleSnapshot(w http.ResponseWriter, req *http.Request) {
 	if start == "" {
 		start = pi.BaseKey
 	}
-	nr := root.New(config.Roots(s.Store), &root.Options{
+	nr := root.New(s.Store.Roots(), &root.Options{
 		FileKey:     newKey,
 		Description: "Triggered snapshot of " + start,
 	})
