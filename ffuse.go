@@ -131,11 +131,21 @@ func (n Node) Attr(ctx context.Context, attr *fuse.Attr) error {
 func (n Node) fillAttr(attr *fuse.Attr) {
 	attr.Inode = fileInode(n.file)
 
-	nb := n.file.Data().Size()
+	s := n.file.Stat()
+	var nb int64
+	if s.Mode.IsDir() {
+		for _, kid := range n.file.Child().Names() {
+			nb += int64(32 + len(kid))
+			// +32 for the storage key. It could be more or less, but the point
+			// here is to have some stable number that approximates how much
+			// storage the directory occupies.
+		}
+	} else {
+		nb = n.file.Data().Size()
+	}
+
 	attr.Size = uint64(nb)
 	attr.Blocks = uint64((nb + 511) / 512)
-
-	s := n.file.Stat()
 	attr.Mode = s.Mode
 	attr.Mtime = s.ModTime
 	attr.Uid = uint32(s.OwnerID)
