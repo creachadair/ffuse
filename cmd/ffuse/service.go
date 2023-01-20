@@ -12,7 +12,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
 	"github.com/creachadair/ffs/file/root"
 	"github.com/creachadair/ffstools/ffs/config"
@@ -176,12 +175,12 @@ func (s *Service) Shutdown(ctx context.Context) {
 		pi := *s.Path.Load()
 		rk, err := pi.Flush(ctx)
 		if err != nil {
-			blob.CloseStore(ctx, s.Store)
+			s.Store.Close(ctx)
 			log.Fatalf("Flushing file data: %v", err)
 		}
 		fmt.Printf("%x\n", rk)
 	}
-	blob.CloseStore(ctx, s.Store)
+	s.Store.Close(ctx)
 }
 
 func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
