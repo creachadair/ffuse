@@ -1,6 +1,6 @@
 module github.com/creachadair/ffuse
 
-go 1.18
+go 1.19
 
 require (
 	github.com/creachadair/ffs v0.0.0-20230204022207-569f8f4cdd9e
