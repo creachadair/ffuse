@@ -660,6 +660,9 @@ func (h Handle) flush(ctx context.Context) error {
 		// Because the filesystem is a Merkle tree, flushing any node flushes all
 		// its children recursively.
 		_, err := h.file.Flush(ctx)
+		if err == nil {
+			h.file.Child().Release()
+		}
 		return err
 	})
 }
