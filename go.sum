@@ -3,12 +3,12 @@ github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/creachadair/atomicfile v0.3.0 h1:4HvescJCWkiLOqHkhtCeNAY4+8DVyYkQgwBDyAAvDWI=
 github.com/creachadair/chirp v0.0.0-20230328043846-db5a8b978c9b h1:Pj6wnV+zs1X87BQE7fck3xogrqsZrSsFrT21WCKGp0w=
 github.com/creachadair/chirp v0.0.0-20230328043846-db5a8b978c9b/go.mod h1:QADhwe4oyQ0m8nx86cMnnb1YlxL45bCfKnjSjj+OD4g=
-github.com/creachadair/chirpstore v0.0.0-20230422214319-b6099503373a h1:8EotIbGg9Y95dRBXITi17Y5bLFLP4ziBhmIgslaJsvo=
-github.com/creachadair/chirpstore v0.0.0-20230422214319-b6099503373a/go.mod h1:r4v7GWA57HAGIGPfSAvV/mTrLYCuLvY/71o1NiSizLA=
+github.com/creachadair/chirpstore v0.0.0-20230423155339-2da1f662029f h1:n/aYaaicVocWo8Qt9IUGjOpPuUDLsyNWInP8ignUuM4=
+github.com/creachadair/chirpstore v0.0.0-20230423155339-2da1f662029f/go.mod h1:BvQjAF+WuPNYYf0cYfArEfgHMFoNnRO1k4k1ETO8GhM=
 github.com/creachadair/ffs v0.0.0-20230422230946-ae5c147c555f h1:8D53w8/sukwaaCQmERJvAbg47su/UakRnW6KnSqpors=
 github.com/creachadair/ffs v0.0.0-20230422230946-ae5c147c555f/go.mod h1:5dZMjVOeTblmzX9KcF9PXde3kw+oX77UDCvU6hPasFQ=
-github.com/creachadair/ffstools v0.0.0-20230422233306-0c7422d408ff h1:FU0IEqYZINFB7sYJeHO87rsT5pUa9xorCrL9C4c09vI=
-github.com/creachadair/ffstools v0.0.0-20230422233306-0c7422d408ff/go.mod h1:+elAIFci5u7dnBGsHsN/96g0b6Hao3s8B6I3YGM3Juk=
+github.com/creachadair/ffstools v0.0.0-20230423160303-df57eaee9da8 h1:pGXcHkbIWsYHrWjMWdPgouSu8Cf/HU4gntgNeEh/HWY=
+github.com/creachadair/ffstools v0.0.0-20230423160303-df57eaee9da8/go.mod h1:+elAIFci5u7dnBGsHsN/96g0b6Hao3s8B6I3YGM3Juk=
 github.com/creachadair/mds v0.0.1 h1:2nX6Sww4dXpScx3b6aYjH1n7iuEH715+jj+cKkKw9BY=
 github.com/creachadair/taskgroup v0.5.1 h1:O9UWnfoqX+K6jFwN5lYDN/h0prhc1zVhk8/SCmKmffc=
 github.com/creachadair/taskgroup v0.5.1/go.mod h1:e1kO+tKiCfDiDiwHei/dXgz3i9kQ8b5inEUVsrGmFfw=
