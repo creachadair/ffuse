@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -44,22 +46,36 @@ type Service struct {
 	FS      *ffuse.FS
 	Status  *http.ServeMux
 
+	// Execution settings.
+	Exec    bool
+	Verbose bool
+	Args    []string
+
 	// Blob storage.
 	Config *config.Settings
 	Store  config.CAS
 	Path   atomic.Pointer[config.PathInfo]
 }
 
+func (s *Service) logf(msg string, args ...any) {
+	if s.Verbose || !s.Exec {
+		log.Printf(msg, args...)
+	}
+}
+
 // Init checks the settings, and loads the initial filesystem state from the
 // specified blob store. It terminates the process if any of these steps fail.
 func (s *Service) Init(ctx context.Context) {
 	// Check flags for consistency.
-	if s.MountPath == "" {
+	switch {
+	case s.MountPath == "":
 		log.Fatal("You must set a non-empty -mount path")
-	} else if s.RootKey == "" {
+	case s.RootKey == "":
 		log.Fatal("You must set a non-empty -root pointer key")
-	} else if s.ReadOnly && s.AutoFlush > 0 {
+	case s.ReadOnly && s.AutoFlush > 0:
 		log.Fatal("You may not enable -auto-flush with -read-only")
+	case s.Exec && len(s.Args) == 0:
+		log.Fatal("You must provide a command to execute with -exec")
 	}
 
 	var err error
@@ -79,7 +95,7 @@ func (s *Service) Init(ctx context.Context) {
 		s.Config.EnableDebugLogging = true
 	}
 	if s.DebugLog&debugFUSE != 0 {
-		fuse.Debug = func(arg any) { log.Printf("FUSE: %v", arg) }
+		fuse.Debug = func(arg any) { s.logf("FUSE: %v", arg) }
 	}
 
 	// Open blob store.
@@ -95,12 +111,12 @@ func (s *Service) Init(ctx context.Context) {
 	}
 	s.Path.Store(pi)
 	if pi.Root != nil {
-		log.Printf("Loaded filesystem from %q (%x)", pi.RootKey, pi.FileKey)
+		s.logf("Loaded filesystem from %q (%x)", pi.RootKey, pi.FileKey)
 		if pi.Root.Description != "" {
-			log.Printf("| Description: %q", pi.Root.Description)
+			s.logf("| Description: %q", pi.Root.Description)
 		}
 	} else {
-		log.Printf("Loaded filesystem at %x (no root pointer)", pi.FileKey)
+		s.logf("Loaded filesystem at %x (no root pointer)", pi.FileKey)
 	}
 
 	s.Status = http.NewServeMux()
@@ -144,21 +160,45 @@ func (s *Service) Run(ctx context.Context) error {
 		return err
 	}
 
-	// If we are supposed to auto-flush, set up a task fto do that now.
+	// If we are supposed to auto-flush, set up a task to do that now.
 	if s.AutoFlush > 0 {
-		log.Printf("Enabling auto-flush every %v", s.AutoFlush)
+		s.logf("Enabling auto-flush every %v", s.AutoFlush)
 		go s.autoFlush(ctx, s.AutoFlush)
 	}
 
+	// If we are supposed to execute a command, do that now.
+	var errc chan error
+	if s.Exec {
+		name := s.Args[0]
+		s.logf("Starting subprocess %q", name)
+		cmd := exec.CommandContext(ctx, name, s.Args[1:]...)
+		cmd.Dir = s.MountPath
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		errc = make(chan error, 1)
+		go func() {
+			defer close(errc)
+			errc <- cmd.Run()
+		}()
+	}
+
+	unmount := func() {
+		s.logf("Unmounting %q", s.MountPath)
+		if err := fuse.Unmount(s.MountPath); err != nil {
+			log.Printf("WARNING: Unmount failed: %v", err)
+		}
+	}
 	select {
 	case err := <-done:
 		return err
 
+	case err := <-errc:
+		unmount()
+		return err
+
 	case <-ctx.Done():
-		log.Printf("Unmounting %q", s.MountPath)
-		if err := fuse.Unmount(s.MountPath); err != nil {
-			log.Printf("WARNING: Unmount failed: %v", err)
-		}
+		unmount()
 		return errors.New("terminated by signal")
 	}
 }
@@ -169,7 +209,7 @@ func (s *Service) Shutdown(ctx context.Context) {
 	if err := s.Conn.Close(); err != nil {
 		log.Printf("WARNING: closing fuse connection failed: %v", err)
 	} else {
-		log.Print("Closed fuse connection")
+		s.logf("Closed fuse connection")
 	}
 	if !s.ReadOnly {
 		pi := *s.Path.Load()
@@ -189,7 +229,7 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Print("Stopping auto-flush routine")
+			s.logf("Stopping auto-flush routine")
 			return
 		case <-t.C:
 			oldKey := s.Path.Load().BaseKey
@@ -197,7 +237,7 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			if err != nil {
 				log.Printf("WARNING: Error flushing root: %v", err)
 			} else if oldKey != newKey {
-				log.Printf("Root flushed, storage key is now %x", newKey)
+				s.logf("Root flushed, storage key is now %x", newKey)
 			}
 		}
 	}
@@ -288,7 +328,7 @@ func (s *Service) handleRoot(w http.ResponseWriter, req *http.Request) {
 	}
 	s.Path.Store(pi)
 	s.FS.Update(pi.File)
-	log.Printf("Filesystem root updated to %q (%x)", newRoot, pi.FileKey)
+	s.logf("Filesystem root updated to %q (%x)", newRoot, pi.FileKey)
 	writeJSON(w, http.StatusOK, makeOpReply("root", rootReply{
 		R: newRoot, S: []byte(pi.FileKey),
 	}))

@@ -40,6 +40,8 @@ func init() {
 	flag.IntVar(&svc.DebugLog, "debug", 0, "Set debug logging level (1=ffs, 2=fuse, 3=both)")
 	flag.StringVar(&svc.RootKey, "root", "", "Storage key of root pointer")
 	flag.DurationVar(&svc.AutoFlush, "auto-flush", 0, "Automatically flush the root at this interval")
+	flag.BoolVar(&svc.Exec, "exec", false, "Execute a command, then unmount and exit")
+	flag.BoolVar(&svc.Verbose, "v", false, "Enable verbose logging")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-read-only] -store addr -mount path -root key[/path...]
@@ -66,6 +68,12 @@ Updating the filesystem changes what is visible through the mount point.
 You can effect a "reload" of the filesystem contents by putting the same value
 the filesystem was started with.
 
+If -exec is set, the non-flag arguments remaining on the command line are
+executed as a subprocess with the current working directory set to the mount
+point, and when the subprocess exits the filesystem is unmounted. If the first
+argument of the command begins with "|", the stdin of %[1]s is piped to the
+subprocess.
+
 Options:
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -77,6 +85,7 @@ func main() {
 	log.SetPrefix("[ffuse] ")
 
 	ctx := context.Background()
+	svc.Args = flag.Args()
 	svc.Init(ctx)
 
 	if *serveAddr != "" {
@@ -97,6 +106,6 @@ func main() {
 	err := svc.Run(rctx)
 	cancel()
 
-	log.Printf("Server exited: %v", err)
+	svc.logf("Server exited: %v", err)
 	svc.Shutdown(ctx)
 }
