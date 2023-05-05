@@ -70,9 +70,9 @@ the filesystem was started with.
 
 If -exec is set, the non-flag arguments remaining on the command line are
 executed as a subprocess with the current working directory set to the mount
-point, and when the subprocess exits the filesystem is unmounted. If the first
-argument of the command begins with "|", the stdin of %[1]s is piped to the
-subprocess.
+point, and when the subprocess exits the filesystem is unmounted. The stdin
+of %[1]s is piped to the subprocess, and the subprocess's stdout and stderr
+are routed to the stdout and stderr of %[1]s.
 
 Options:
 `, filepath.Base(os.Args[0]))
