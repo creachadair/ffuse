@@ -23,11 +23,12 @@ import (
 	"errors"
 	"io"
 	"os"
-	"reflect"
 	"sync"
 	"syscall"
 	"time"
+	"unsafe"
 
+	"github.com/cespare/xxhash"
 	"github.com/creachadair/ffs/file"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
@@ -664,10 +665,16 @@ func (h Handle) flush(ctx context.Context) error {
 	})
 }
 
-// fileInode synthesizes an inode number for a file from its address.
-// This is safe because a location cannot become another file until after a
-// successful GC, which means the old one is no longer referenced.
-func fileInode(f *file.File) uint64 { return uint64(reflect.ValueOf(f).Pointer()) }
+// fileInode synthesizes an inode number for a file from its key.  Files
+// without a key (for example, new files not yet flushed out) the file is
+// assigned a key based on its pointer, which is guaranteed to be unique as
+// long as the file is reachable.
+func fileInode(f *file.File) uint64 {
+	if key := f.Key(); key != "" {
+		return xxhash.Sum64String(key)
+	}
+	return uint64(uintptr(unsafe.Pointer(f)))
+}
 
 func nodeType(n fs.Node) Node {
 	switch t := n.(type) {

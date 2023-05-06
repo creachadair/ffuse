@@ -3,6 +3,7 @@ module github.com/creachadair/ffuse
 go 1.19
 
 require (
+	github.com/cespare/xxhash v1.1.0
 	github.com/creachadair/ffs v0.0.1
 	github.com/creachadair/ffstools v0.0.0-20230430174739-9c4eb3822619
 	github.com/seaweedfs/fuse v1.2.2
