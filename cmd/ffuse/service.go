@@ -99,7 +99,7 @@ func (s *Service) Init(ctx context.Context) {
 	}
 
 	// Open blob store.
-	s.Store, err = s.Config.OpenStore()
+	s.Store, err = s.Config.OpenStore(ctx)
 	if err != nil {
 		log.Fatalf("Opening blob store: %v", err)
 	}
