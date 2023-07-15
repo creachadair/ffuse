@@ -14,7 +14,7 @@ require (
 	github.com/creachadair/chirp v0.0.0-20230622232502-aa9519635210 // indirect
 	github.com/creachadair/chirpstore v0.0.0-20230623151155-d1942127cb50 // indirect
 	github.com/creachadair/taskgroup v0.6.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
