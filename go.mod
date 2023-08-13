@@ -1,6 +1,6 @@
 module github.com/creachadair/ffuse
 
-go 1.19
+go 1.20
 
 require (
 	github.com/cespare/xxhash v1.1.0
