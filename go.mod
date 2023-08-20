@@ -11,8 +11,8 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20230814020651-ed1e4f7b17a3 // indirect
-	github.com/creachadair/chirpstore v0.0.0-20230813171440-0e213cee70e9 // indirect
+	github.com/creachadair/chirp v0.0.0-20230819165834-1b225e573fda // indirect
+	github.com/creachadair/chirpstore v0.0.0-20230819165835-e1b3e20f7f8d // indirect
 	github.com/creachadair/taskgroup v0.6.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
