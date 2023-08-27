@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/cespare/xxhash v1.1.0
 	github.com/creachadair/ffs v0.0.2
-	github.com/creachadair/ffstools v0.1.11
+	github.com/creachadair/ffstools v0.1.13
 	github.com/seaweedfs/fuse v1.2.3
 )
 

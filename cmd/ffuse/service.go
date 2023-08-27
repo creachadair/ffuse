@@ -111,12 +111,12 @@ func (s *Service) Init(ctx context.Context) {
 	}
 	s.Path.Store(pi)
 	if pi.Root != nil {
-		s.logf("Loaded filesystem from %q (%x)", pi.RootKey, pi.FileKey)
+		s.logf("Loaded filesystem from %q (%s)", pi.RootKey, config.FormatKey(pi.FileKey))
 		if pi.Root.Description != "" {
 			s.logf("| Description: %q", pi.Root.Description)
 		}
 	} else {
-		s.logf("Loaded filesystem at %x (no root pointer)", pi.FileKey)
+		s.logf("Loaded filesystem at %s (no root pointer)", config.FormatKey(pi.FileKey))
 	}
 
 	s.Status = http.NewServeMux()
@@ -218,7 +218,7 @@ func (s *Service) Shutdown(ctx context.Context) {
 			s.Store.Close(ctx)
 			log.Fatalf("Flushing file data: %v", err)
 		}
-		fmt.Printf("%x\n", rk)
+		fmt.Printf("%s\n", config.FormatKey(rk))
 	}
 	s.Store.Close(ctx)
 }
@@ -237,7 +237,7 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			if err != nil {
 				log.Printf("WARNING: Error flushing root: %v", err)
 			} else if oldKey != newKey {
-				s.logf("Root flushed, storage key is now %x", newKey)
+				s.logf("Root flushed, storage key is now %s", config.FormatKey(newKey))
 			}
 		}
 	}
@@ -328,7 +328,7 @@ func (s *Service) handleRoot(w http.ResponseWriter, req *http.Request) {
 	}
 	s.Path.Store(pi)
 	s.FS.Update(pi.File)
-	s.logf("Filesystem root updated to %q (%x)", newRoot, pi.FileKey)
+	s.logf("Filesystem root updated to %q (%s)", newRoot, config.FormatKey(pi.FileKey))
 	writeJSON(w, http.StatusOK, makeOpReply("root", rootReply{
 		R: newRoot, S: []byte(pi.FileKey),
 	}))
