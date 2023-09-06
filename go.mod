@@ -1,6 +1,8 @@
 module github.com/creachadair/ffuse
 
-go 1.20
+go 1.21
+
+toolchain go1.21.0
 
 require (
 	github.com/cespare/xxhash v1.1.0
@@ -11,10 +13,10 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20230819165834-1b225e573fda // indirect
-	github.com/creachadair/chirpstore v0.0.0-20230819165835-e1b3e20f7f8d // indirect
-	github.com/creachadair/taskgroup v0.6.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	github.com/creachadair/chirp v0.0.0-20230905155036-9e8373920279 // indirect
+	github.com/creachadair/chirpstore v0.0.0-20230904162112-a2e35655d60d // indirect
+	github.com/creachadair/taskgroup v0.6.1 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
