@@ -19,7 +19,7 @@ package ffuse
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"io"
 	"os"
@@ -227,7 +227,7 @@ func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 
 const (
 	ffsStorageKey    = "ffs.storageKey"
-	ffsStorageKeyHex = ffsStorageKey + ".hex"
+	ffsStorageKeyB64 = ffsStorageKey + ".b64"
 )
 
 // Getxattr implements fs.NodeGetxattrer. Each node has a synthesized xattr
@@ -235,12 +235,12 @@ const (
 // the attribute implicitly flushes the target node to storage.
 func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse.GetxattrResponse) error {
 	// Reading the storage key requires a write lock so we can flush.
-	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyHex {
+	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyB64 {
 		return n.writeLock(func() error {
 			key, err := n.file.Flush(ctx)
 			if err == nil {
-				if req.Name == ffsStorageKeyHex {
-					key = hex.EncodeToString([]byte(key))
+				if req.Name == ffsStorageKeyB64 {
+					key = base64.StdEncoding.EncodeToString([]byte(key))
 				}
 				if cap := int(req.Size); cap > 0 && cap < len(key) {
 					key = key[:cap]
@@ -303,7 +303,7 @@ func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fu
 	// So for now I've removed them.
 	//
 	//add(ffsStorageKey)
-	//add(ffsStorageKeyHex)
+	//add(ffsStorageKeyB64)
 
 	return n.readLock(func() error {
 		for _, key := range n.file.XAttr().Names() {
@@ -411,7 +411,7 @@ func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 
 // Removexattr implements fs.NodeRemovexattrer.
 func (n Node) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
-	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyHex {
+	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyB64 {
 		return fuse.EPERM // these are read-only
 	}
 	return n.writeLock(func() error {
@@ -509,7 +509,7 @@ func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.S
 
 // Setxattr implements fs.NodeSetxattrer.
 func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
-	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyHex {
+	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyB64 {
 		return fuse.EPERM
 	} else if req.Position != 0 {
 		return fuse.EPERM // macOS resource forks; don't store that crap
