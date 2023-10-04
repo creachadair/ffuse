@@ -25,6 +25,8 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+
+	"github.com/creachadair/flax"
 )
 
 var (
@@ -34,14 +36,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&svc.StoreSpec, "store", os.Getenv("FFS_STORE"), "Blob storage address (required)")
-	flag.StringVar(&svc.MountPath, "mount", "", "Path of mount point (required)")
-	flag.BoolVar(&svc.ReadOnly, "read-only", false, "Mount the filesystem as read-only")
-	flag.IntVar(&svc.DebugLog, "debug", 0, "Set debug logging level (1=ffs, 2=fuse, 3=both)")
-	flag.StringVar(&svc.RootKey, "root", "", "Storage key of root pointer")
-	flag.DurationVar(&svc.AutoFlush, "auto-flush", 0, "Automatically flush the root at this interval")
-	flag.BoolVar(&svc.Exec, "exec", false, "Execute a command, then unmount and exit")
-	flag.BoolVar(&svc.Verbose, "v", false, "Enable verbose logging")
+	flax.MustBind(flag.CommandLine, svc)
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-read-only] -store addr -mount path -root key[/path...]

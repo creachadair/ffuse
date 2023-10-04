@@ -29,12 +29,12 @@ const (
 
 // Service holds the state of the mounted filesystem.
 type Service struct {
-	MountPath string        // path of mount point
-	RootKey   string        // root or file key
-	StoreSpec string        // blob store spec
-	ReadOnly  bool          // whether the mount is read-only
-	DebugLog  int           // debug logging level
-	AutoFlush time.Duration // auto-flush interval (0=disabled)
+	MountPath string        `flag:"mount,Path of mount point (required)"`
+	RootKey   string        `flag:"root,Storage key of root pointer"`
+	StoreSpec string        `flag:"store,default=$FFS_STORE,Blob storage address (required)"`
+	ReadOnly  bool          `flag:"read-only,Mount the filesystem as read-only"`
+	DebugLog  int           `flag:"debug,Set debug logging level (1=ffs, 2=fuse, 3=both)"`
+	AutoFlush time.Duration `flag:"auto-flush,Automatically flush the root at this interval"`
 
 	// Fuse library settings.
 	MountOptions []fuse.MountOption
@@ -47,8 +47,8 @@ type Service struct {
 	Status  *http.ServeMux
 
 	// Execution settings.
-	Exec    bool
-	Verbose bool
+	Exec    bool `flag:"exec,Execute a command, then unmount and exit"`
+	Verbose bool `flag:"v,Enable verbose logging"`
 	Args    []string
 
 	// Blob storage.

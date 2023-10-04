@@ -8,6 +8,7 @@ require (
 	github.com/cespare/xxhash v1.1.0
 	github.com/creachadair/ffs v0.0.2
 	github.com/creachadair/ffstools v0.2.3
+	github.com/creachadair/flax v0.0.0-20230904162121-7852fa2389bd
 	github.com/seaweedfs/fuse v1.2.3
 )
 
