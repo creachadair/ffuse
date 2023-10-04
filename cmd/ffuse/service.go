@@ -2,20 +2,14 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
-	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/creachadair/ffs/file"
-	"github.com/creachadair/ffs/file/root"
 	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/ffuse"
 	"github.com/seaweedfs/fuse"
@@ -44,7 +38,6 @@ type Service struct {
 	// Filesystem settings.
 	Options ffuse.Options
 	FS      *ffuse.FS
-	Status  *http.ServeMux
 
 	// Execution settings.
 	Exec    bool `flag:"exec,Execute a command, then unmount and exit"`
@@ -54,7 +47,7 @@ type Service struct {
 	// Blob storage.
 	Config *config.Settings
 	Store  config.CAS
-	Path   atomic.Pointer[config.PathInfo]
+	Path   *config.PathInfo
 }
 
 func (s *Service) logf(msg string, args ...any) {
@@ -109,7 +102,7 @@ func (s *Service) Init(ctx context.Context) {
 	if err != nil {
 		log.Fatalf("Loading root path: %v", err)
 	}
-	s.Path.Store(pi)
+	s.Path = pi
 	if pi.Root != nil {
 		s.logf("Loaded filesystem from %q (%s)", pi.RootKey, config.FormatKey(pi.FileKey))
 		if pi.Root.Description != "" {
@@ -118,12 +111,6 @@ func (s *Service) Init(ctx context.Context) {
 	} else {
 		s.logf("Loaded filesystem at %s (no root pointer)", config.FormatKey(pi.FileKey))
 	}
-
-	s.Status = http.NewServeMux()
-	s.Status.HandleFunc("/status", s.handleStatus)
-	s.Status.HandleFunc("/flush", s.handleStatus)
-	s.Status.HandleFunc("/root/", s.handleRoot)
-	s.Status.HandleFunc("/snapshot/", s.handleSnapshot)
 }
 
 // Mount establishes a connection for the filesystem mount point and prepares
@@ -141,7 +128,7 @@ func (s *Service) Mount() error {
 	}
 
 	s.FileServer = fs.New(s.Conn, nil)
-	s.FS = ffuse.New(s.Path.Load().File, s.FileServer, &s.Options)
+	s.FS = ffuse.New(s.Path.File, s.FileServer, &s.Options)
 	return nil
 }
 
@@ -212,8 +199,7 @@ func (s *Service) Shutdown(ctx context.Context) {
 		s.logf("Closed fuse connection")
 	}
 	if !s.ReadOnly {
-		pi := *s.Path.Load()
-		rk, err := pi.Flush(ctx)
+		rk, err := s.Path.Flush(ctx)
 		if err != nil {
 			s.Store.Close(ctx)
 			log.Fatalf("Flushing file data: %v", err)
@@ -232,7 +218,7 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			s.logf("Stopping auto-flush routine")
 			return
 		case <-t.C:
-			oldKey := s.Path.Load().BaseKey
+			oldKey := s.Path.BaseKey
 			newKey, err := s.flushRoot(ctx)
 			if err != nil {
 				log.Printf("WARNING: Error flushing root: %v", err)
@@ -247,142 +233,7 @@ func (s *Service) flushRoot(ctx context.Context) (newKey string, err error) {
 	// We need to lock out filesystem operations while we do this, since it may
 	// update state deeper inside the tree.
 	s.FS.WithRoot(func(_ *file.File) {
-		newKey, err = s.Path.Load().Flush(ctx)
+		newKey, err = s.Path.Flush(ctx)
 	})
 	return
-}
-
-func (s *Service) handleStatus(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "GET" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	doFlush := req.URL.Path == "/flush"
-
-	storageKey := s.Path.Load().BaseKey
-	var oldKey string
-	if doFlush {
-		if nk, err := s.flushRoot(req.Context()); err != nil {
-			log.Printf("WARNING: Error flushing root: %v", err)
-		} else if nk != storageKey {
-			oldKey, storageKey = storageKey, nk
-		}
-	}
-
-	var autoFlush string
-	if s.AutoFlush > 0 {
-		autoFlush = s.AutoFlush.Round(time.Second).String()
-	}
-	writeJSON(w, http.StatusOK, makeOpReply("status", statusReply{
-		MountPath:  s.MountPath,
-		Root:       effectiveRootKey(s.Path.Load()),
-		Store:      s.StoreSpec,
-		ReadOnly:   s.ReadOnly,
-		AutoFlush:  autoFlush,
-		OldKey:     []byte(oldKey),
-		StorageKey: []byte(storageKey),
-	}))
-}
-
-type rootReply struct {
-	R string `json:"root"`
-	S []byte `json:"storageKey"`
-}
-
-type errorReply struct {
-	Err string `json:"error"`
-}
-
-func errorFmt(op string, msg string, args ...any) opReply {
-	return makeOpReply(op, errorReply{Err: fmt.Sprintf(msg, args...)})
-}
-
-type opReply map[string]any
-
-func makeOpReply(op string, v any) opReply { return opReply{op: v} }
-
-type statusReply struct {
-	MountPath  string `json:"mountPath"`
-	Root       any    `json:"root"`
-	Store      string `json:"store"`
-	ReadOnly   bool   `json:"readOnly"`
-	AutoFlush  string `json:"autoFlush,omitempty"`
-	OldKey     []byte `json:"oldKey,omitempty"`
-	StorageKey []byte `json:"storageKey"`
-}
-
-func (s *Service) handleRoot(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	newRoot := strings.TrimPrefix(req.URL.Path, "/root/")
-	if newRoot == "" {
-		writeJSON(w, http.StatusBadRequest, errorFmt("root", "missing new root pointer"))
-		return
-	}
-	pi, err := config.OpenPath(req.Context(), s.Store, newRoot)
-	if err != nil {
-		writeJSON(w, http.StatusNotFound, errorFmt("root", err.Error()))
-		return
-	}
-	s.Path.Store(pi)
-	s.FS.Update(pi.File)
-	s.logf("Filesystem root updated to %q (%s)", newRoot, config.FormatKey(pi.FileKey))
-	writeJSON(w, http.StatusOK, makeOpReply("root", rootReply{
-		R: newRoot, S: []byte(pi.FileKey),
-	}))
-}
-
-func (s *Service) handleSnapshot(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	doReplace, _ := strconv.ParseBool(req.URL.Query().Get("replace"))
-	newSnap := strings.TrimPrefix(req.URL.Path, "/snapshot/")
-	if newSnap == "" {
-		writeJSON(w, http.StatusBadRequest, errorFmt("snapshot", "missing snapshot name"))
-		return
-	}
-	newKey, err := s.flushRoot(req.Context())
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, errorFmt("snapshot", err.Error()))
-		return
-	}
-	pi := s.Path.Load()
-	start := pi.RootKey
-	if start == "" {
-		start = pi.BaseKey
-	}
-	nr := root.New(s.Store.Roots(), &root.Options{
-		FileKey:     newKey,
-		Description: "Triggered snapshot of " + start,
-	})
-	if err := nr.Save(req.Context(), newSnap, doReplace); err != nil {
-		writeJSON(w, http.StatusInternalServerError, errorFmt("snapshot", err.Error()))
-		return
-	}
-	writeJSON(w, http.StatusOK, makeOpReply("snapshot", rootReply{
-		R: newSnap, S: []byte(newKey),
-	}))
-}
-
-func writeJSON(w http.ResponseWriter, code int, value any) {
-	data, err := json.Marshal(value)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, err.Error())
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(data)
-}
-
-func effectiveRootKey(pi *config.PathInfo) any {
-	if pi.RootKey == "" {
-		return []byte(pi.BaseKey)
-	}
-	return pi.RootKey
 }

@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -30,8 +29,6 @@ import (
 )
 
 var (
-	serveAddr = flag.String("listen", "", "Status service address")
-
 	svc = &Service{MountOptions: fuseMountOptions}
 )
 
@@ -49,19 +46,6 @@ prefixed by "@".
 If -store is not set, the FFS_STORE environment variable is used as a default
 if it is defined; otherwise the default from the FFS config file is used or an
 error is reported.
-
-If -listen is set, an HTTP service is exposed at that address which supports
-the following operations:
-
-   GET /status         -- return a JSON blob of filesystem status
-   GET /flush          -- as /status, but also flushes the root to storage
-   POST /root/:key     -- update the filesystem root to the specified key
-   POST /snapshot/:key -- snapshot the filesystem to the specified root key
-                          use ?replace=true to replace an existing root
-
-Updating the filesystem changes what is visible through the mount point.
-You can effect a "reload" of the filesystem contents by putting the same value
-the filesystem was started with.
 
 If -exec is set, the non-flag arguments remaining on the command line are
 executed as a subprocess with the current working directory set to the mount
@@ -82,15 +66,6 @@ func main() {
 	ctx := context.Background()
 	svc.Args = flag.Args()
 	svc.Init(ctx)
-
-	if *serveAddr != "" {
-		log.Printf("Starting status service at %q...", *serveAddr)
-		go func() {
-			if err := http.ListenAndServe(*serveAddr, svc.Status); err != nil {
-				log.Fatalf("HTTP service failed: %v", err)
-			}
-		}()
-	}
 
 	if err := svc.Mount(); err != nil {
 		log.Fatalf("Mount failed: %v", err)
