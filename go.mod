@@ -14,10 +14,10 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20231025185539-a0fdc2cb8a37 // indirect
-	github.com/creachadair/chirpstore v0.0.0-20231017191646-2413d3c6d598 // indirect
-	github.com/creachadair/taskgroup v0.6.1 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	github.com/creachadair/chirp v0.0.0-20231105164600-6a0f2a1c200a // indirect
+	github.com/creachadair/chirpstore v0.0.0-20231102203322-8b376898bf02 // indirect
+	github.com/creachadair/taskgroup v0.6.2 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
