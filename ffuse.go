@@ -23,6 +23,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -32,6 +33,7 @@ import (
 	"github.com/creachadair/ffs/file"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
+	"golang.org/x/crypto/sha3"
 )
 
 // New constructs a new FS with the given root file.  The resulting value is
@@ -228,14 +230,17 @@ func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 const (
 	ffsStorageKey    = "ffs.storageKey"
 	ffsStorageKeyB64 = ffsStorageKey + ".b64"
+	ffsDataHash      = "ffs.dataHash"
+	ffsDataHashB64   = ffsDataHash + ".b64"
 )
 
 // Getxattr implements fs.NodeGetxattrer. Each node has a synthesized xattr
 // called "ffs.storageKey" that returns the storage key for the node. Reading
 // the attribute implicitly flushes the target node to storage.
 func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse.GetxattrResponse) error {
-	// Reading the storage key requires a write lock so we can flush.
-	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyB64 {
+	switch req.Name {
+	case ffsStorageKey, ffsStorageKeyB64:
+		// Reading the storage key requires a write lock so we can flush.
 		return n.writeLock(func() error {
 			key, err := n.file.Flush(ctx)
 			if err == nil {
@@ -248,6 +253,22 @@ func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse
 				rsp.Xattr = []byte(key)
 			}
 			return err
+		})
+	case ffsDataHash, ffsDataHashB64:
+		return n.readLock(func() error {
+			h := sha3.New256()
+			for _, key := range n.file.Data().Keys() {
+				io.WriteString(h, key)
+			}
+			hash := h.Sum(nil)
+			if req.Name == ffsDataHashB64 {
+				hash = []byte(base64.StdEncoding.EncodeToString(hash))
+			}
+			if cap := int(req.Size); cap > 0 && cap < len(hash) {
+				hash = hash[:cap]
+			}
+			rsp.Xattr = hash
+			return nil
 		})
 	}
 
@@ -509,7 +530,7 @@ func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.S
 
 // Setxattr implements fs.NodeSetxattrer.
 func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
-	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyB64 {
+	if strings.HasPrefix(req.Name, ffsStorageKey) || strings.HasPrefix(req.Name, ffsDataHash) {
 		return fuse.EPERM
 	} else if req.Position != 0 {
 		return fuse.EPERM // macOS resource forks; don't store that crap

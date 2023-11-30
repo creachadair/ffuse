@@ -10,6 +10,7 @@ require (
 	github.com/creachadair/ffstools v0.2.8
 	github.com/creachadair/flax v0.0.0-20231006163155-9fabbdad68e2
 	github.com/seaweedfs/fuse v1.2.3
+	golang.org/x/crypto v0.15.0
 )
 
 require (
