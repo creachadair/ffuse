@@ -10,12 +10,12 @@ require (
 	github.com/creachadair/ffstools v0.2.8
 	github.com/creachadair/flax v0.0.0-20231211041532-4d51c109e3c1
 	github.com/seaweedfs/fuse v1.2.3
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20231211041426-128559415fa4 // indirect
+	github.com/creachadair/chirp v0.0.0-20231218230823-23928dd53c45 // indirect
 	github.com/creachadair/chirpstore v0.0.0-20231211041526-a0498567eb97 // indirect
 	github.com/creachadair/taskgroup v0.6.2 // indirect
 	golang.org/x/sys v0.15.0 // indirect
