@@ -2,12 +2,20 @@
 
 package main
 
-import "github.com/seaweedfs/fuse"
+import (
+	"time"
 
-var fuseMountOptions = []fuse.MountOption{
-	fuse.FSName("ffs"),
-	fuse.Subtype("ffs"),
-	fuse.VolumeName("FFS"),
-	fuse.NoAppleDouble(),
-	fuse.MaxReadahead(1 << 16),
+	"github.com/creachadair/mds/value"
+	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
+)
+
+var fuseOptions = fs.Options{
+	MountOptions: fuse.MountOptions{
+		Options: []string{"volname=FFS", "noappledouble"},
+		FsName:  "ffs",
+		Name:    "ffs",
+	},
+	EntryTimeout: value.Ptr(time.Second),
+	AttrTimeout:  value.Ptr(time.Second),
 }

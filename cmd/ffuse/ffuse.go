@@ -25,12 +25,12 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/creachadair/ctrl"
+	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/flax"
 )
 
-var (
-	svc = &Service{MountOptions: fuseMountOptions}
-)
+var svc = &Service{Options: fuseOptions}
 
 func init() {
 	flax.MustBind(flag.CommandLine, svc)
@@ -63,19 +63,26 @@ func main() {
 	flag.Parse()
 	log.SetPrefix("[ffuse] ")
 
-	ctx := context.Background()
-	svc.Args = flag.Args()
-	svc.Init(ctx)
+	ctrl.Run(func() error {
+		ctx := context.Background()
+		svc.Init(ctx)
+		defer svc.Store.Close(ctx)
 
-	if err := svc.Mount(); err != nil {
-		log.Fatalf("Mount failed: %v", err)
-	}
+		// Set up a context to propagate signals to the serving loop.
+		rctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT)
+		defer cancel()
 
-	// Set up a context to propagate signals to the serving loop.
-	rctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT)
-	err := svc.Run(rctx)
-	cancel()
+		if err := svc.Run(rctx); err != nil {
+			ctrl.Fatalf("Filesystem failed: %v", err)
+		}
 
-	svc.logf("Server exited: %v", err)
-	svc.Shutdown(ctx)
+		if !svc.ReadOnly {
+			rk, err := svc.Path.Flush(ctx)
+			if err != nil {
+				ctrl.Fatalf("Flushing file data: %v", err)
+			}
+			fmt.Printf("%s\n", config.FormatKey(rk))
+		}
+		return nil
+	})
 }

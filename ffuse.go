@@ -13,8 +13,8 @@
 // limitations under the License.
 
 // Package ffuse implements a FUSE filesystem driver backed by the flexible
-// filesystem package (github.com/creachadair/ffs). It is compatible with
-// the github.com/seaweedfs/fuse and github.com/seaweedfs/fuse/fs packages.
+// filesystem package (github.com/creachadair/ffs). It is compatible with the
+// github.com/hanwen/go-fuse packages for FUSE integration.
 package ffuse
 
 import (
@@ -24,207 +24,136 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
-	"unsafe"
 
-	"github.com/cespare/xxhash"
 	"github.com/creachadair/ffs/file"
-	"github.com/seaweedfs/fuse"
-	"github.com/seaweedfs/fuse/fs"
+	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
 	"golang.org/x/crypto/sha3"
 )
 
-// New constructs a new FS with the given root file.  The resulting value is
-// safe for concurrent use by multiple goroutines.
-func New(root *file.File, server *fs.Server, opts *Options) *FS {
-	fs := &FS{root: root, server: server}
-	fs.rnode = &Node{fs: fs, file: fs.root}
-	return fs
-}
+type errno = syscall.Errno
 
-// WithRoot calls f with the root file of the filesystem, while holding the
-// filesystem lock exclusively.
-func (fs *FS) WithRoot(f func(*file.File)) {
-	inv := fs.newInvalSet()
-	defer inv.process()
+// NewFS constructs a new FS with the given root file.
+func NewFS(root *file.File) *FS { return &FS{file: root} }
 
-	fs.μ.Lock()
-	defer fs.μ.Unlock()
-	inv.attr(fs.rnode)
-	f(fs.root)
-}
-
-// Update replaces the root of the filesystem with root and invalidates the
-// attribute cache for the root.
-func (fs *FS) Update(newRoot *file.File) {
-	inv := fs.newInvalSet()
-	defer inv.process()
-
-	fs.μ.Lock()
-	defer fs.μ.Unlock()
-	fs.rnode.file = newRoot
-	inv.attr(fs.rnode)
-}
-
-// Options control optional settings for a FS. A nil *Options is valid and
-// provides default values as described.
-type Options struct{}
-
-// FS implements the fs.FS interface.
 type FS struct {
-	// All operations on any node of the filesystem must hold μ.
-	// Operations that modify the contents of the tree must hold a write lock.
-	μ      sync.RWMutex
-	root   *file.File
-	rnode  *Node
-	server *fs.Server
-}
+	// The fs.Inode is self-synchronizing, and is accessed via its
+	// impelmentation of the fs.InodeEmbedder interface. Its key requirement is
+	// that we must not copy the value.
+	fs.Inode
 
-// Root implements the fs.FS interface.
-func (fs *FS) Root() (fs.Node, error) {
-	fs.μ.RLock()
-	defer fs.μ.RUnlock()
-	return fs.rnode, nil
-}
-
-// A Node implements the fs.Node interface along with other node-related
-// interfaces from the github.com/seaweedfs/fuse/fs package.
-type Node struct {
-	fs   *FS
 	file *file.File
 }
 
-// Verify interface satisfactions.
+// Verify that the FS supports interfaces required by the FUSE integration.
 var (
-	_ fs.FS                  = (*FS)(nil)
-	_ fs.Node                = Node{}
-	_ fs.NodeCreater         = Node{}
-	_ fs.NodeFsyncer         = Node{}
-	_ fs.NodeGetxattrer      = Node{}
-	_ fs.NodeLinker          = Node{}
-	_ fs.NodeListxattrer     = Node{}
-	_ fs.NodeMkdirer         = Node{}
-	_ fs.NodeOpener          = Node{}
-	_ fs.NodeReadlinker      = Node{}
-	_ fs.NodeRemover         = Node{}
-	_ fs.NodeRenamer         = Node{}
-	_ fs.NodeRequestLookuper = Node{}
-	_ fs.NodeSetattrer       = Node{}
-	_ fs.NodeSetxattrer      = Node{}
-	_ fs.NodeSymlinker       = Node{}
-	_ fs.HandleFlusher       = (*Handle)(nil)
-	_ fs.HandleReadDirAller  = (*Handle)(nil)
-	_ fs.HandleReader        = (*Handle)(nil)
-	_ fs.HandleReleaser      = (*Handle)(nil)
-	_ fs.HandleWriter        = (*Handle)(nil)
+	_ fs.InodeEmbedder = (*FS)(nil)
+
+	_ fs.NodeCreater       = (*FS)(nil)
+	_ fs.NodeFsyncer       = (*FS)(nil)
+	_ fs.NodeGetattrer     = (*FS)(nil)
+	_ fs.NodeGetxattrer    = (*FS)(nil)
+	_ fs.NodeLinker        = (*FS)(nil)
+	_ fs.NodeListxattrer   = (*FS)(nil)
+	_ fs.NodeLookuper      = (*FS)(nil)
+	_ fs.NodeMkdirer       = (*FS)(nil)
+	_ fs.NodeOpener        = (*FS)(nil)
+	_ fs.NodeReaddirer     = (*FS)(nil)
+	_ fs.NodeReadlinker    = (*FS)(nil)
+	_ fs.NodeRemovexattrer = (*FS)(nil)
+	_ fs.NodeRenamer       = (*FS)(nil)
+	_ fs.NodeRmdirer       = (*FS)(nil)
+	_ fs.NodeSetattrer     = (*FS)(nil)
+	_ fs.NodeSetxattrer    = (*FS)(nil)
+	_ fs.NodeSymlinker     = (*FS)(nil)
+	_ fs.NodeUnlinker      = (*FS)(nil)
 )
 
-// Attr implements fs.Node.
-func (n Node) Attr(ctx context.Context, attr *fuse.Attr) error {
-	return n.readLock(func() error {
-		n.fillAttr(attr)
-		return nil
-	})
-}
-
-// fillAttr populates the fields of attr with stat metadata from the file in n.
-// The caller must hold the filesystem lock.
-func (n Node) fillAttr(attr *fuse.Attr) {
-	attr.Inode = fileInode(n.file)
-
-	s := n.file.Stat()
-	var nb int64
-	if s.Mode.IsDir() {
-		for _, kid := range n.file.Child().Names() {
-			nb += int64(32 + len(kid))
-			// +32 for the storage key. It could be more or less, but the point
-			// here is to have some stable number that approximates how much
-			// storage the directory occupies.
-		}
-	} else {
-		nb = n.file.Data().Size()
+// Create implements the fs.NodeCreater interface.
+func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *fuse.EntryOut) (in *fs.Inode, fh fs.FileHandle, _ uint32, _ errno) {
+	caller, ok := fuse.FromContext(ctx)
+	if !ok {
+		return nil, nil, 0, syscall.ENOSYS
 	}
 
-	attr.Size = uint64(nb)
-	attr.Blocks = uint64((nb + 511) / 512)
-	attr.Mode = s.Mode
-	attr.Mtime = s.ModTime
-	attr.Uid = uint32(s.OwnerID)
-	attr.Gid = uint32(s.GroupID)
-	attr.Nlink = 1
-	if s.Mode.IsDir() {
-		attr.Nlink = uint32(2 + n.file.Child().Len())
-	}
-}
-
-// touchIfOK updates the last-modified timestamp of the file in n, if err == nil.
-// The caller must hold the filesystem write lock.
-func (n Node) touchIfOK(err error) {
+	nf, err := f.file.Open(ctx, name)
 	if err == nil {
-		stat := n.file.Stat()
-		stat.ModTime = time.Now()
-		stat.Update()
+		// The file already exists; if O_EXCL is set the request fails.
+		if flags&syscall.O_EXCL != 0 {
+			return nil, nil, 0, syscall.EEXIST
+		}
+	} else if !errors.Is(err, file.ErrChildNotFound) {
+		return nil, nil, 0, errorToErrno(err)
+	} else {
+		// The file does not exist; create a new empty file or directory.
+		nf = f.file.New(&file.NewOptions{
+			Name: name,
+			Stat: &file.Stat{
+				Mode:    fromSysMode(mode, true),
+				OwnerID: int(caller.Uid),
+				GroupID: int(caller.Gid),
+			},
+		})
+		f.file.Child().Set(name, nf)
 	}
-}
 
-// Create implements fs.NodeCreater.
-func (n Node) Create(ctx context.Context, req *fuse.CreateRequest, rsp *fuse.CreateResponse) (node fs.Node, handle fs.Handle, err error) {
-	err = n.writeLock(func() error {
-		f, err := n.file.Open(ctx, req.Name)
-		if err == nil {
-			// The file already exists; if O_EXCL is set the request fails (EEXIST).
-			if req.Flags&fuse.OpenExclusive != 0 {
-				return fuse.EEXIST
-			}
-		} else if !errors.Is(err, file.ErrChildNotFound) {
-			return err
-		} else {
-			// The file doesn't exist; create a new empty file or directory.
-			f = n.file.New(&file.NewOptions{
-				Name: req.Name,
-				Stat: &file.Stat{
-					Mode:    req.Mode,
-					OwnerID: int(req.Uid),
-					GroupID: int(req.Gid),
-				},
-			})
-			n.file.Child().Set(req.Name, f)
+	// IF the request wants the file truncated, do that now.
+	if flags&syscall.O_TRUNC != 0 {
+		if err := nf.Truncate(ctx, 0); err != nil {
+			return nil, nil, 0, errorToErrno(err)
 		}
-		defer n.touchIfOK(nil)
+	}
 
-		// If the request wants the file truncated, do that now.
-		if req.Flags&fuse.OpenTruncate != 0 {
-			if err := f.Truncate(ctx, 0); err != nil {
-				return err
-			}
-		}
-
-		// Now all is well, and we can safely return a file.
-		fnode := Node{fs: n.fs, file: f}
-		fnode.fillAttr(&rsp.Attr)
-		defer fnode.touchIfOK(nil)
-
-		node = fnode
-		handle = &Handle{
-			Node:     fnode,
-			writable: !req.Flags.IsReadOnly(),
-			append:   req.Flags&fuse.OpenAppend != 0,
-		}
-		return nil
-	})
+	nfs := &FS{file: nf}
+	nfs.fillAttr(&out.Attr)
+	in = f.NewInode(ctx, nfs, fileStableAttr(nf))
+	fh = fileHandle{fs: nfs, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}
 	return
 }
 
-// Fsync implements fs.NodeFsyncer.
-func (n Node) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
-	return n.writeLock(func() error {
-		// With FFS it is not possible to sync metadata separately from data, so
-		// this implementation ignores the datasync bit.
-		_, err := n.file.Flush(ctx)
-		return err
-	})
+func (f *FS) fillAttr(out *fuse.Attr) {
+	s := f.file.Stat()
+	var nb int64
+	var nlink uint32 = 1
+	if s.Mode.IsDir() {
+		nlink = uint32(2 + f.file.Child().Len())
+		for _, kid := range f.file.Child().Names() {
+			nb += int64(32 + len(kid))
+			// +32 for the storage key. This is just an estimate; the point here
+			// is to have some stable number that approximates how much storage
+			// the directory occupies.
+		}
+	} else {
+		nb = f.file.Data().Size()
+	}
+
+	mtns := s.ModTime.UnixNano()
+
+	out.Size = uint64(nb)
+	out.Blocks = uint64((nb + 511) / 512)
+	out.Mode = toSysMode(s.Mode)
+	out.Mtime = uint64(mtns / 1e9)     // seconds
+	out.Mtimensec = uint32(mtns % 1e9) // nanoseconds within second
+	out.Owner.Uid = uint32(s.OwnerID)
+	out.Owner.Gid = uint32(s.GroupID)
+	out.Nlink = nlink
+}
+
+// Fsync implements the fs.NodeFsyncer interface.
+func (f *FS) Fsync(ctx context.Context, fh fs.FileHandle, flags uint32) errno {
+	_, err := f.file.Flush(ctx)
+	return errorToErrno(err)
+}
+
+// Getattr implements the fs.NodeGetattrer interface.
+func (f *FS) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) errno {
+	if fh != nil {
+		return fh.(fs.FileGetattrer).Getattr(ctx, out)
+	}
+	f.fillAttr(&out.Attr)
+	return 0
 }
 
 const (
@@ -234,523 +163,452 @@ const (
 	ffsDataHashB64   = ffsDataHash + ".b64"
 )
 
-// Getxattr implements fs.NodeGetxattrer. Each node has a synthesized xattr
-// called "ffs.storageKey" that returns the storage key for the node. Reading
-// the attribute implicitly flushes the target node to storage.
-func (n Node) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, rsp *fuse.GetxattrResponse) error {
-	switch req.Name {
-	case ffsStorageKey, ffsStorageKeyB64:
-		// Reading the storage key requires a write lock so we can flush.
-		return n.writeLock(func() error {
-			key, err := n.file.Flush(ctx)
-			if err == nil {
-				if req.Name == ffsStorageKeyB64 {
-					key = base64.StdEncoding.EncodeToString([]byte(key))
-				}
-				if cap := int(req.Size); cap > 0 && cap < len(key) {
-					key = key[:cap]
-				}
-				rsp.Xattr = []byte(key)
-			}
-			return err
-		})
-	case ffsDataHash, ffsDataHashB64:
-		return n.readLock(func() error {
-			h := sha3.New256()
-			for _, key := range n.file.Data().Keys() {
-				io.WriteString(h, key)
-			}
-			hash := h.Sum(nil)
-			if req.Name == ffsDataHashB64 {
-				hash = []byte(base64.StdEncoding.EncodeToString(hash))
-			}
-			if cap := int(req.Size); cap > 0 && cap < len(hash) {
-				hash = hash[:cap]
-			}
-			rsp.Xattr = hash
-			return nil
-		})
-	}
-
-	// Other attributes require only a read lock.
-	return n.readLock(func() error {
-		xa := n.file.XAttr()
-		if !xa.Has(req.Name) {
-			return xattrErrnoNotFound
+// Getxattr implements the fs.NodeGetxattrer interface.
+func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, errno) {
+	buf := dest[:0]
+	var encode bool
+	switch attr {
+	case ffsStorageKeyB64:
+		encode = true
+		fallthrough
+	case ffsStorageKey:
+		key, err := f.file.Flush(ctx)
+		if err != nil {
+			return 0, errorToErrno(err)
 		}
-		val := xa.Get(req.Name)
-		if cap := int(req.Size); cap > 0 && cap < len(val) {
-			val = val[:cap]
+		buf = append(buf, key...)
+	case ffsDataHashB64:
+		encode = true
+		fallthrough
+	case ffsDataHash:
+		h := sha3.New256()
+		for _, key := range f.file.Data().Keys() {
+			io.WriteString(h, key)
 		}
-		rsp.Xattr = []byte(val)
-		return nil
-	})
-}
-
-// Link implements fs.NodeLinker.
-func (n Node) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (node fs.Node, err error) {
-	inv := n.fs.newInvalSet()
-	defer inv.process()
-	err = n.writeLock(func() error {
-		if n.file.Child().Has(req.NewName) {
-			return fuse.EEXIST
-		}
-		tgt := nodeType(old)
-		if tgt.file.Stat().Mode.IsDir() {
-			return fuse.EPERM
-		}
-
-		n.file.Child().Set(req.NewName, tgt.file)
-		inv.entry(n, req.NewName)
-		inv.attr(n)
-		node = tgt
-		defer n.touchIfOK(nil)
-		return nil
-	})
-	return
-}
-
-// Listxattr implements fs.NodeListxattrer.
-func (n Node) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, rsp *fuse.ListxattrResponse) error {
-	cap := int(req.Size)
-	add := func(name string) {
-		if cap == 0 || len(rsp.Xattr)+len(name) < cap {
-			rsp.Append(name)
-		}
-	}
-
-	// TODO: Should we include the storage key entries in the list?  I did at
-	// first, but then it complicates command-line usage because they're magic.
-	// So for now I've removed them.
-	//
-	//add(ffsStorageKey)
-	//add(ffsStorageKeyB64)
-
-	return n.readLock(func() error {
-		for _, key := range n.file.XAttr().Names() {
-			add(key)
-		}
-		return nil
-	})
-}
-
-// Lookup implements fs.NodeRequestLookuper.
-func (n Node) Lookup(ctx context.Context, req *fuse.LookupRequest, rsp *fuse.LookupResponse) (node fs.Node, err error) {
-	// N.B. This requires a write lock because paging in children updates caches.
-	err = n.writeLock(func() error {
-		f, err := n.file.Open(ctx, req.Name)
-		if errors.Is(err, file.ErrChildNotFound) {
-			return fuse.ENOENT
-		} else if err != nil {
-			return err
-		}
-
-		fnode := Node{fs: n.fs, file: f}
-		fnode.fillAttr(&rsp.Attr)
-		node = fnode
-		return nil
-	})
-	return
-}
-
-// Mkdir implements fs.NodeMkdirer.
-func (n Node) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (node fs.Node, err error) {
-	err = n.writeLock(func() error {
-		if n.file.Child().Has(req.Name) {
-			return fuse.EEXIST
-		}
-		defer n.touchIfOK(nil)
-		f := n.file.New(&file.NewOptions{
-			Name: req.Name,
-			Stat: &file.Stat{
-				Mode:    req.Mode,
-				ModTime: time.Now(),
-				OwnerID: int(req.Uid),
-				GroupID: int(req.Gid),
-			},
-		})
-		n.file.Child().Set(req.Name, f)
-		node = Node{fs: n.fs, file: f}
-		return nil
-	})
-	return
-}
-
-// Open implements fs.NodeOpener.
-func (n Node) Open(ctx context.Context, req *fuse.OpenRequest, rsp *fuse.OpenResponse) (handle fs.Handle, err error) {
-	err = n.readLock(func() error {
-		handle = &Handle{
-			Node:     n,
-			writable: !req.Flags.IsReadOnly(),
-			append:   req.Flags&fuse.OpenAppend != 0,
-		}
-		return nil
-	})
-	return
-}
-
-// Readlink implements fs.NodeReadlinker.
-func (n Node) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (target string, err error) {
-	err = n.readLock(func() error {
-		buf := make([]byte, int(n.file.Data().Size()))
-		if _, err := n.file.ReadAt(ctx, buf, 0); err != nil {
-			return err
-		}
-		target = string(buf)
-		return nil
-	})
-	return
-}
-
-// Remove implements fs.NodeRemover.
-func (n Node) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
-	inv := n.fs.newInvalSet()
-	defer inv.process()
-	return n.writeLock(func() error {
-		f, err := n.file.Open(ctx, req.Name)
-		if errors.Is(err, file.ErrChildNotFound) {
-			return fuse.ENOENT
-		} else if err != nil {
-			return err
-		}
-
-		if f.Stat().Mode.IsDir() {
-			if !req.Dir {
-				return fuse.EPERM // unlink(directory)
-			} else if f.Child().Len() != 0 {
-				return fuse.Errno(syscall.ENOTEMPTY)
-			}
-		} else if req.Dir {
-			return fuse.EPERM // rmdir(non-directory)
-		}
-		n.file.Child().Remove(req.Name)
-		inv.entry(n, req.Name)
-		inv.attr(n)
-		return nil
-	})
-}
-
-// Removexattr implements fs.NodeRemovexattrer.
-func (n Node) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
-	if req.Name == ffsStorageKey || req.Name == ffsStorageKeyB64 {
-		return fuse.EPERM // these are read-only
-	}
-	return n.writeLock(func() error {
-		x := n.file.XAttr()
-		if !x.Has(req.Name) {
-			return xattrErrnoNotFound
-		}
-
-		// N.B. Do not update the modtime for extended attribute changes.  POSIX
-		// defines mtime as for a change of file contents.
-		x.Remove(req.Name)
-		return nil
-	})
-}
-
-// Rename implements fs.NodeRenamer.
-func (n Node) Rename(ctx context.Context, req *fuse.RenameRequest, dir fs.Node) error {
-	inv := n.fs.newInvalSet()
-	defer inv.process()
-	return n.writeLock(func() error {
-		// N.B. Order matters here, since n and dir may be the same node.
-
-		src, err := n.file.Open(ctx, req.OldName)
-		if errors.Is(err, file.ErrChildNotFound) {
-			return fuse.ENOENT
-		} else if err != nil {
-			return err
-		}
-
-		dir := nodeType(dir)
-		if tgt, err := dir.file.Open(ctx, req.NewName); err == nil {
-			if tgt.Stat().Mode.IsDir() {
-				return fuse.EEXIST // can't replace an existing directory
-
-				// The rename(2) documentation implies src can replace tgt if they
-				// are both directories, but in practice most filesystems appear
-				// reject an attempt to replace a directory with anything, even if
-				// they are both empty. So I have adopted the same semantics here.
-
-			} else if src.Stat().Mode.IsDir() {
-				return fuse.EEXIST // can't replace a file with a directory
-			}
-
-			// Remove the existing file from the target location.
-			defer dir.touchIfOK(nil)
-			dir.file.Child().Remove(req.NewName)
-		} else if !errors.Is(err, file.ErrChildNotFound) {
-			return err
-		}
-
-		defer n.touchIfOK(nil)
-		n.file.Child().Remove(req.OldName) // remove from the old directory
-		inv.entry(n, req.OldName)
-		inv.attr(n)
-		dir.file.Child().Set(req.NewName, src) // add to the new directory
-		inv.entry(dir, req.NewName)
-		inv.attr(dir)
-		return nil
-	})
-}
-
-// Setattr implements fs.NodeSetattrer.
-func (n Node) Setattr(ctx context.Context, req *fuse.SetattrRequest, rsp *fuse.SetattrResponse) error {
-	return n.writeLock(func() error {
-		// Update the fields of the stat marked as valid in the request.
-		//
-		// Setting stat cannot fail unless it changes the size of the file, so we
-		// will check that first.
-		if req.Valid.Size() {
-			if err := n.file.Truncate(ctx, int64(req.Size)); err != nil {
-				return err
-			}
-		}
-		s := n.file.Stat()
-		if req.Valid.Gid() {
-			s.GroupID = int(req.Gid)
-		}
-		if req.Valid.Mode() {
-			s.Mode = req.Mode
-		}
-		if req.Valid.Mtime() {
-			s.ModTime = req.Mtime
-		}
-		if req.Valid.MtimeNow() {
-			s.ModTime = time.Now()
-		}
-		if req.Valid.Uid() {
-			s.OwnerID = int(req.Uid)
-		}
-		s.Update()
-		n.fillAttr(&rsp.Attr)
-		return nil
-	})
-}
-
-// Setxattr implements fs.NodeSetxattrer.
-func (n Node) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
-	if strings.HasPrefix(req.Name, ffsStorageKey) || strings.HasPrefix(req.Name, ffsDataHash) {
-		return fuse.EPERM
-	} else if req.Position != 0 {
-		return fuse.EPERM // macOS resource forks; don't store that crap
-	}
-	return n.writeLock(func() error {
-		x := n.file.XAttr()
-		if x.Has(req.Name) {
-			if req.Flags&xattrCreate != 0 {
-				return fuse.EEXIST // create, but already exists
-			}
-		} else if req.Flags&xattrReplace != 0 {
-			return xattrErrnoNotFound // replace, but does not exist
-		}
-
-		// N.B. Do not update the modtime for extended attribute changes.  POSIX
-		// defines mtime as for a change of file contents.
-		x.Set(req.Name, string(req.Xattr))
-		return nil
-	})
-}
-
-// Symlink implements fs.NodeSymlinker.
-func (n Node) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (node fs.Node, err error) {
-	err = n.writeLock(func() error {
-		if n.file.Child().Has(req.NewName) {
-			return fuse.EEXIST
-		}
-		f := n.file.New(&file.NewOptions{
-			Name: req.NewName,
-			Stat: &file.Stat{
-				Mode:    os.ModeSymlink | 0555,
-				OwnerID: int(req.Uid),
-				GroupID: int(req.Gid),
-			},
-		})
-		if _, err := f.WriteAt(ctx, []byte(req.Target), 0); err != nil {
-			return err
-		}
-		defer n.touchIfOK(nil)
-		n.file.Child().Set(req.NewName, f)
-
-		fnode := Node{fs: n.fs, file: f}
-		node = fnode
-		return nil
-	})
-	return
-}
-
-// writeLock executes fn while holding a write lock on n.
-func (n Node) writeLock(fn func() error) error {
-	n.fs.μ.Lock()
-	defer n.fs.μ.Unlock()
-	return fn()
-}
-
-// readLock executes fn while holding a read lock on n.
-func (n Node) readLock(fn func() error) error {
-	n.fs.μ.RLock()
-	defer n.fs.μ.RUnlock()
-	return fn()
-}
-
-// A Handle represents an open file pointer.
-type Handle struct {
-	Node
-	writable bool
-	append   bool
-}
-
-// Read implements fs.HandleReader.
-func (h Handle) Read(ctx context.Context, req *fuse.ReadRequest, rsp *fuse.ReadResponse) error {
-	return h.readLock(func() error {
-		buf := make([]byte, req.Size)
-		nr, err := h.file.ReadAt(ctx, buf, req.Offset)
-		if err == io.EOF {
-			// read(2) signals EOF by returning 0 bytes; but io.ReaderAt requires
-			// that any short read report an error. We don't want to propagate
-			// that error back to FUSE, however, because it will turn into EIO.
-			err = nil
-		}
-		rsp.Data = buf[:nr]
-		return err
-	})
-}
-
-// Write implements fs.HandleWriter.
-func (h Handle) Write(ctx context.Context, req *fuse.WriteRequest, rsp *fuse.WriteResponse) error {
-	return h.writeLock(func() error {
-		if !h.writable {
-			return fuse.EPERM
-		}
-		offset := req.Offset
-		if h.append {
-			offset = h.file.Data().Size() // ignore the requested offset for append-only files
-		}
-		nw, err := h.file.WriteAt(ctx, req.Data, offset)
-		defer h.touchIfOK(err)
-		rsp.Size = nw
-		return err
-	})
-}
-
-// Flush implements fs.HandleFlusher.
-func (h Handle) Flush(ctx context.Context, req *fuse.FlushRequest) error { return h.flush(ctx) }
-
-// Release implements fs.HandleReleaser.
-func (h Handle) Release(ctx context.Context, req *fuse.ReleaseRequest) error {
-	if h.writable || h.append {
-		inv := h.fs.newInvalSet()
-		defer inv.process()
-		inv.attr(h.Node)
-	}
-	return h.flush(ctx)
-}
-
-// ReadDirAll implements fs.HandleReadDirAller.
-func (h Handle) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
-	// N.B. This requires a write lock because paging in children updates caches.
-	var elts []fuse.Dirent
-	err := h.writeLock(func() error {
-		elts = make([]fuse.Dirent, h.file.Child().Len())
-		for i, name := range h.file.Child().Names() {
-			kid, err := h.file.Open(ctx, name)
-			if err != nil {
-				return err
-			}
-			var ktype fuse.DirentType
-			switch m := kid.Stat().Mode; {
-			case m.IsDir():
-				ktype = fuse.DT_Dir
-			case m.IsRegular():
-				ktype = fuse.DT_File
-			case m&os.ModeSymlink != 0:
-				ktype = fuse.DT_Link
-			}
-			elts[i] = fuse.Dirent{
-				Inode: fileInode(kid),
-				Name:  name,
-				Type:  ktype,
-			}
-		}
-		return nil
-	})
-	return elts, err
-}
-
-func (h Handle) flush(ctx context.Context) error {
-	return h.writeLock(func() error {
-		// Because the filesystem is a Merkle tree, flushing any node flushes all
-		// its children recursively.
-		_, err := h.file.Flush(ctx)
-		return err
-	})
-}
-
-// fileInode synthesizes an inode number for a file from its key.  Files
-// without a key (for example, new files not yet flushed out) the file is
-// assigned a key based on its pointer, which is guaranteed to be unique as
-// long as the file is reachable.
-func fileInode(f *file.File) uint64 {
-	if key := f.Key(); key != "" {
-		return xxhash.Sum64String(key)
-	}
-	return uint64(uintptr(unsafe.Pointer(f)))
-}
-
-func nodeType(n fs.Node) Node {
-	switch t := n.(type) {
-	case *Node:
-		return *t
-	case Node:
-		return t
+		buf = h.Sum(buf)
 	default:
-		return Node{}
-	}
-}
-
-// An inval represnts an attribute or entry invalidation request we need to
-// make to FUSE.
-type inval struct {
-	fs.Node
-	entryName string
-}
-
-// newInvalSet creates a new empty invalidation set. A caller that needs to
-// invalidate nodes should populate the set and defer a call to the process
-// method before returning.
-//
-// Invalidations cannot safely be processed during the main request flow, as
-// FUSE may upcall into the driver, which will be blocked by the unresolved
-// service routine that wants to do the invalidations. The invalSet handles
-// this by processing the invalidations in a separate goroutine.
-func (fs *FS) newInvalSet() *invalSet { return &invalSet{server: fs.server} }
-
-type invalSet struct {
-	server  *fs.Server
-	entries []inval
-}
-
-// entry adds an invalidation for a directory entry.
-func (v *invalSet) entry(n fs.Node, entry string) {
-	v.entries = append(v.entries, inval{n, entry})
-}
-
-// attr adds an invalidation for node stat.
-func (v *invalSet) attr(n fs.Node) {
-	v.entries = append(v.entries, inval{Node: n})
-}
-
-func (v *invalSet) process() {
-	if len(v.entries) == 0 {
-		return // nothing to do
-	}
-	go func() {
-		for _, e := range v.entries {
-			if e.entryName != "" {
-				v.server.InvalidateEntry(e.Node, e.entryName)
-			} else {
-				v.server.InvalidateNodeAttr(e.Node)
-			}
+		xa := f.file.XAttr()
+		if !xa.Has(attr) {
+			return 0, xattrErrnoNotFound
 		}
-	}()
+		buf = append(buf, xa.Get(attr)...)
+	}
+	if encode {
+		enc := base64.StdEncoding.EncodeToString(buf)
+		buf = append(buf[:0], enc...)
+	}
+	if len(buf) > len(dest) {
+		return uint32(len(buf)), syscall.ERANGE
+	}
+	return uint32(len(buf)), 0
+}
+
+// Link implements the fs.NodeLinker interface.
+func (f *FS) Link(ctx context.Context, target fs.InodeEmbedder, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
+	if f.file.Child().Has(name) {
+		return nil, syscall.EEXIST // disallow linking over an existing name
+	}
+	tf, ok := target.EmbeddedInode().Operations().(*FS)
+	if !ok {
+		return nil, syscall.EIO // not expected to happen
+	}
+	if tf.file.Stat().Mode.IsDir() {
+		return nil, syscall.EPERM // disallow hard-linking a directory
+	}
+	f.file.Child().Set(name, tf.file)
+	nfs := &FS{file: tf.file}
+	nfs.fillAttr(&out.Attr)
+	return f.NewInode(ctx, nfs, fileStableAttr(nfs.file)), 0
+}
+
+// Listxattr implements the fs.NodeListxattrer interface.
+func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
+	buf := dest[:0]
+	for _, name := range f.file.XAttr().Names() {
+		buf = append(buf, name...)
+		buf = append(buf, 0) // NUL terminator
+	}
+	if len(buf) > len(dest) {
+		// Insufficient capacity: Report the desired size and an error.
+		return uint32(len(buf)), syscall.ERANGE
+	}
+	return uint32(len(buf)), 0
+}
+
+// Lookup implements the fs.NodeLookuper interface.
+func (f *FS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
+	nf, err := f.file.Open(ctx, name)
+	if errors.Is(err, file.ErrChildNotFound) {
+		return nil, syscall.ENOENT
+	} else if err != nil {
+		return nil, errorToErrno(err)
+	}
+	nfs := &FS{file: nf}
+	nfs.fillAttr(&out.Attr)
+	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
+}
+
+// Mkdir implements the fs.NodeMkdirer interface.
+func (f *FS) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, errno) {
+	caller, ok := fuse.FromContext(ctx)
+	if !ok {
+		return nil, syscall.ENOSYS
+	}
+	if f.file.Child().Has(name) {
+		return nil, syscall.EEXIST
+	}
+	nf := f.file.New(&file.NewOptions{
+		Name: name,
+		Stat: &file.Stat{
+			Mode:    fromSysMode(mode, true),
+			ModTime: time.Now(),
+			OwnerID: int(caller.Uid),
+			GroupID: int(caller.Gid),
+		},
+	})
+	f.file.Child().Set(name, nf)
+	nfs := &FS{file: nf}
+	nfs.fillAttr(&out.Attr)
+	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
+}
+
+// Open implements the fs.NodeOpener interface.
+func (f *FS) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, errno) {
+	return fileHandle{fs: f, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}, 0, 0
+}
+
+// Readdir implements the fs.NodeReaddirer interface.
+func (f *FS) Readdir(ctx context.Context) (fs.DirStream, errno) {
+	kids := f.file.Child()
+	elts := make([]fuse.DirEntry, kids.Len())
+	for i, name := range kids.Names() { // already sorted
+		kid, err := f.file.Open(ctx, name)
+		if err != nil {
+			return nil, errorToErrno(err)
+		}
+		elts[i] = fuse.DirEntry{
+			Mode: toSysMode(kid.Stat().Mode),
+			Name: name,
+		}
+	}
+	return fs.NewListDirStream(elts), 0
+}
+
+// Readlink implements the fs.NodeReadlinker interface.
+func (f *FS) Readlink(ctx context.Context) ([]byte, errno) {
+	buf := make([]byte, int(f.file.Data().Size()))
+	if _, err := f.file.ReadAt(ctx, buf, 0); err != nil {
+		return nil, errorToErrno(err)
+	}
+	return buf, 0
+}
+
+// Removexattr implements the fs.NodeRemovexattrer interface.
+func (f *FS) Removexattr(ctx context.Context, attr string) errno {
+	if strings.HasPrefix(attr, ffsStorageKey) || strings.HasPrefix(attr, ffsDataHash) {
+		return syscall.EPERM // virtual attributes, not writable
+	}
+	xa := f.file.XAttr()
+	if !xa.Has(attr) {
+		return xattrErrnoNotFound
+	}
+	xa.Remove(attr)
+	return 0
+}
+
+// Rename implements the fs.NodeRenameer interface.
+func (f *FS) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) errno {
+	np, ok := newParent.EmbeddedInode().Operations().(*FS)
+	if !ok {
+		return syscall.ENOSYS
+	}
+	cf, err := f.file.Open(ctx, name) // this is the file to be renamed
+	if errors.Is(err, file.ErrChildNotFound) {
+		return syscall.ENOENT
+	} else if err != nil {
+		return errorToErrno(err)
+	}
+	tf, err := np.file.Open(ctx, newName) // this is the target name
+	if err == nil {
+		if tf.Stat().Mode.IsDir() {
+			return syscall.EEXIST // disallow replacement of an existing directory
+
+			// The rename(2) documentation implies src can replace tgt if they are
+			// both directories, but in practice most filesystems appear to reject
+			// an attempt to replace a directory with anything, even if they are
+			// both empty. So I have adopted the same semantics here.
+		} else if cf.Stat().Mode.IsDir() {
+			return syscall.EEXIST // disallow overwriting a file with a directory
+		}
+	} else if !errors.Is(err, file.ErrChildNotFound) {
+		return errorToErrno(err)
+	}
+
+	// Order matters here, since we may be renaming the child within the same
+	// directory: Remove the old entry, then add the new entry.
+	f.file.Child().Remove(name)
+	np.file.Child().Set(newName, cf)
+	return 0
+}
+
+// Rmdir implements the fs.NodeRmdirer interface.
+func (f *FS) Rmdir(ctx context.Context, name string) errno {
+	uf, err := f.file.Open(ctx, name)
+	if errors.Is(err, file.ErrChildNotFound) {
+		return syscall.ENOENT
+	} else if err != nil {
+		return errorToErrno(err)
+	}
+
+	if uf.Child().Len() != 0 {
+		return syscall.ENOTEMPTY
+	} else if !f.file.Child().Remove(name) {
+		return syscall.ENOENT
+	}
+	return 0
+}
+
+// Setattr implements the fs.NodeSetattrer interface.
+func (f *FS) Setattr(ctx context.Context, _ fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) errno {
+	// Update the fields of the stat marked as valid in the request.
+	//
+	// Setting stat cannot fail unless it changes the size of the file, so we
+	// will check that first.
+	if sz, ok := in.GetSize(); ok {
+		if err := f.file.Truncate(ctx, int64(sz)); err != nil {
+			return errorToErrno(err)
+		}
+	}
+
+	s := f.file.Stat()
+	if id, ok := in.GetGID(); ok {
+		s.GroupID = int(id)
+	}
+	if id, ok := in.GetUID(); ok {
+		s.OwnerID = int(id)
+	}
+	if m, ok := in.GetMode(); ok {
+		s.Mode = s.Mode.Type() | fromSysMode(m, false) // omit type
+	}
+	if mt, ok := in.GetMTime(); ok {
+		s.ModTime = mt
+	}
+	s.Update()
+	f.fillAttr(&out.Attr)
+	return 0
+}
+
+// Setxattr implements the fs.NodeSetxattrer interface.
+func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint32) errno {
+	if strings.HasPrefix(attr, ffsStorageKey) || strings.HasPrefix(attr, ffsDataHash) {
+		return syscall.EPERM // virtual attributes, not writable
+	}
+	xa := f.file.XAttr()
+	if xa.Has(attr) && flags&xattrCreate != 0 {
+		return syscall.EEXIST // create, but it already exists
+	} else if flags&xattrReplace != 0 {
+		return xattrErrnoNotFound // replace, but it doesn't exist
+	}
+
+	xa.Set(attr, string(data))
+	return 0
+}
+
+// Symlink implements the fs.NodeSymlinker interface.
+func (f *FS) Symlink(ctx context.Context, target, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
+	caller, ok := fuse.FromContext(ctx)
+	if !ok {
+		return nil, syscall.ENOSYS
+	}
+	if f.file.Child().Has(name) {
+		return nil, syscall.EEXIST
+	}
+	nf := f.file.New(&file.NewOptions{
+		Name: name,
+		Stat: &file.Stat{
+			Mode:    os.ModeSymlink | 0555,
+			OwnerID: int(caller.Uid),
+			GroupID: int(caller.Gid),
+		},
+	})
+	if _, err := nf.WriteAt(ctx, []byte(target), 0); err != nil {
+		return nil, errorToErrno(err)
+	}
+	f.file.Child().Set(name, nf)
+	nfs := &FS{file: nf}
+	nfs.fillAttr(&out.Attr)
+	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
+}
+
+// Unlink implements the fs.NodeUnlinker interface.
+func (f *FS) Unlink(ctx context.Context, name string) errno {
+	uf, err := f.file.Open(ctx, name)
+	if errors.Is(err, file.ErrChildNotFound) {
+		return syscall.ENOENT
+	} else if err != nil {
+		return errorToErrno(err)
+	}
+
+	// POSIX wants us not to allow removal of non-empty directories.
+	if uf.Stat().Mode.IsDir() && uf.Child().Len() != 0 {
+		return syscall.ENOTEMPTY
+	} else if !f.file.Child().Remove(name) {
+		return syscall.ENOENT
+	}
+	return 0
+}
+
+// Verify that filehandles support interfaces required by the FUSE integration.
+var (
+	_ fs.FileGetattrer = fileHandle{}
+	_ fs.FileReader    = fileHandle{}
+	_ fs.FileReleaser  = fileHandle{}
+	_ fs.FileFlusher   = fileHandle{}
+	_ fs.FileWriter    = fileHandle{}
+)
+
+type fileHandle struct {
+	fs               *FS
+	writable, append bool
+}
+
+// Getattr implements the fs.FileGetattrer interface.
+func (h fileHandle) Getattr(ctx context.Context, out *fuse.AttrOut) errno {
+	h.fs.fillAttr(&out.Attr)
+	return 0
+}
+
+// Read implements the fs.FileReader interface.
+func (h fileHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.ReadResult, errno) {
+	nr, err := h.fs.file.ReadAt(ctx, dest, off)
+	if err != nil && err != io.EOF {
+		// read(2) signals EOF by returning 0 bytes, but io.ReaderAt requires
+		// that any short read report an error. We don't want to propagate that
+		// error back to FUSE, however, because that will turn into EIO.
+		return nil, errorToErrno(err)
+	}
+	return fuse.ReadResultData(dest[:nr]), 0
+}
+
+// Release implements the fs.FileReleaser interface.
+func (h fileHandle) Release(ctx context.Context) errno {
+	h.fs.file.Child().Release() // un-pin cached child files
+	return errorToErrno(nil)
+}
+
+func (h fileHandle) touch() {
+	stat := h.fs.file.Stat()
+	stat.ModTime = time.Now()
+	stat.Update()
+}
+
+// Write implements the fs.FileWriter interface.
+func (h fileHandle) Write(ctx context.Context, data []byte, off int64) (uint32, errno) {
+	if !h.writable {
+		return 0, syscall.EPERM
+	} else if h.append {
+		// If the file is open for appending, ignore the requested offset.
+		off = h.fs.file.Data().Size()
+	}
+	nw, err := h.fs.file.WriteAt(ctx, data, off)
+	if nw > 0 {
+		h.touch()
+	}
+	return uint32(nw), errorToErrno(err)
+}
+
+// Flush implements the fs.FileFlusher interface.
+func (h fileHandle) Flush(ctx context.Context) errno {
+	_, err := h.fs.file.Flush(ctx)
+	return errorToErrno(err)
+}
+
+func errorToErrno(err error) errno {
+	if err == nil {
+		return 0
+	} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return syscall.EINTR
+	}
+	return syscall.EIO
+}
+
+func fileStableAttr(file *file.File) fs.StableAttr {
+	return fs.StableAttr{Mode: modeFileType(file.Stat().Mode)}
+}
+
+func isReadOnly(flags uint32) bool {
+	return flags&syscall.O_RDWR == 0 && flags&syscall.O_WRONLY == 0
+}
+
+// modeFileType constructs a system-compatible representation of the type of a
+// file from the Go-specific mode word. While the Go encoding is stable, it is
+// not always consistent with the system layout.
+func modeFileType(m os.FileMode) uint32 { return toSysMode(m) & syscall.S_IFMT }
+
+// toSysMode converts a Go file mode to the system-specific layout.
+// This presumes a Unix-like syscall package.
+func toSysMode(m os.FileMode) uint32 {
+	base := uint32(m.Perm())
+	switch {
+	// Check common cases early.
+	case m.IsRegular():
+	case m.IsDir():
+		base |= syscall.S_IFDIR
+	case m&os.ModeSymlink != 0:
+		base |= syscall.S_IFLNK
+	case m&os.ModeSocket != 0:
+		base |= syscall.S_IFSOCK
+	case m&os.ModeNamedPipe != 0:
+		base |= syscall.S_IFIFO
+	case m&os.ModeCharDevice != 0:
+		base |= syscall.S_IFCHR
+	case m&os.ModeDevice != 0:
+		base |= syscall.S_IFBLK // ok, we checked for char devices first
+	}
+	if m&os.ModeSetuid != 0 {
+		base |= syscall.S_ISUID
+	}
+	if m&os.ModeSetgid != 0 {
+		base |= syscall.S_ISGID
+	}
+	if m&os.ModeSticky != 0 {
+		base |= syscall.S_ISVTX
+	}
+	return base
+}
+
+func fromSysMode(m uint32, withType bool) os.FileMode {
+	base := os.FileMode(m).Perm()
+	if m&syscall.S_ISUID != 0 {
+		base |= os.ModeSetuid
+	}
+	if m&syscall.S_ISGID != 0 {
+		base |= os.ModeSetgid
+	}
+	if m&syscall.S_ISVTX != 0 {
+		base |= os.ModeSticky
+	}
+	if withType {
+		switch {
+		// Check common cases early.
+		case m&syscall.S_IFREG != 0:
+			// OK, this is the default.
+		case m&syscall.S_IFDIR != 0:
+			base |= os.ModeDir
+		case m&syscall.S_IFLNK != 0:
+			base |= os.ModeSymlink
+
+		case m&syscall.S_IFSOCK != 0:
+			base |= os.ModeSocket
+		case m&syscall.S_IFIFO != 0:
+			base |= os.ModeNamedPipe
+		case m&syscall.S_IFCHR != 0:
+			base |= os.ModeDevice | os.ModeCharDevice
+		case m&syscall.S_IFBLK != 0:
+			base |= os.ModeDevice
+		default:
+			base |= os.ModeIrregular // "something else"
+		}
+	}
+	return base
 }

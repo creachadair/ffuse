@@ -16,8 +16,6 @@ package ffuse
 
 import (
 	"syscall"
-
-	"github.com/seaweedfs/fuse"
 )
 
 // Symbolic constants for extended attributes, macOS version.
@@ -27,5 +25,5 @@ const (
 	xattrReplace = 4 // XATTR_REPLACE for setxattr(2)
 
 	// The errno returned for "xattr not found".
-	xattrErrnoNotFound = fuse.Errno(syscall.ENOATTR)
+	xattrErrnoNotFound = syscall.ENOATTR
 )

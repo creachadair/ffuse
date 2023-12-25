@@ -3,17 +3,18 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"time"
 
-	"github.com/creachadair/ffs/file"
+	"github.com/creachadair/ctrl"
 	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/ffuse"
-	"github.com/seaweedfs/fuse"
-	"github.com/seaweedfs/fuse/fs"
+	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
 const (
@@ -29,20 +30,12 @@ type Service struct {
 	ReadOnly  bool          `flag:"read-only,Mount the filesystem as read-only"`
 	DebugLog  int           `flag:"debug,Set debug logging level (1=ffs, 2=fuse, 3=both)"`
 	AutoFlush time.Duration `flag:"auto-flush,Automatically flush the root at this interval"`
+	Verbose   bool          `flag:"v,Enable verbose logging"`
+	Exec      bool          `flag:"exec,Execute a command, then unmount and exit"`
 
 	// Fuse library settings.
-	MountOptions []fuse.MountOption
-	FileServer   *fs.Server
-	Conn         *fuse.Conn
-
-	// Filesystem settings.
-	Options ffuse.Options
-	FS      *ffuse.FS
-
-	// Execution settings.
-	Exec    bool `flag:"exec,Execute a command, then unmount and exit"`
-	Verbose bool `flag:"v,Enable verbose logging"`
-	Args    []string
+	Options fs.Options
+	Server  *fuse.Server
 
 	// Blob storage.
 	Config *config.Settings
@@ -50,7 +43,9 @@ type Service struct {
 	Path   *config.PathInfo
 }
 
-func (s *Service) logf(msg string, args ...any) {
+// Logf writes a log message to the standard logger if verbose logging is
+// enabled.
+func (s *Service) Logf(msg string, args ...any) {
 	if s.Verbose || !s.Exec {
 		log.Printf(msg, args...)
 	}
@@ -62,13 +57,13 @@ func (s *Service) Init(ctx context.Context) {
 	// Check flags for consistency.
 	switch {
 	case s.MountPath == "":
-		log.Fatal("You must set a non-empty -mount path")
+		ctrl.Fatalf("You must set a non-empty -mount path")
 	case s.RootKey == "":
-		log.Fatal("You must set a non-empty -root pointer key")
+		ctrl.Fatalf("You must set a non-empty -root pointer key")
 	case s.ReadOnly && s.AutoFlush > 0:
-		log.Fatal("You may not enable -auto-flush with -read-only")
-	case s.Exec && len(s.Args) == 0:
-		log.Fatal("You must provide a command to execute with -exec")
+		ctrl.Fatalf("You may not enable -auto-flush with -read-only")
+	case s.Exec && flag.NArg() == 0:
+		ctrl.Fatalf("You must provide a command to execute with -exec")
 	}
 
 	var err error
@@ -76,7 +71,7 @@ func (s *Service) Init(ctx context.Context) {
 	// Load configuration file.
 	s.Config, err = config.Load(config.Path())
 	if err != nil {
-		log.Fatalf("Loading configuration: %v", err)
+		ctrl.Fatalf("Loading configuration: %v", err)
 	}
 	if s.StoreSpec != "" {
 		s.Config.DefaultStore = s.StoreSpec
@@ -88,77 +83,71 @@ func (s *Service) Init(ctx context.Context) {
 		s.Config.EnableDebugLogging = true
 	}
 	if s.DebugLog&debugFUSE != 0 {
-		fuse.Debug = func(arg any) { s.logf("FUSE: %v", arg) }
+		s.Options.MountOptions.Logger = log.New(os.Stderr, "FUSE: ", log.LstdFlags|log.Lmicroseconds)
+		s.Options.MountOptions.Debug = true
 	}
 
 	// Open blob store.
 	s.Store, err = s.Config.OpenStore(ctx)
 	if err != nil {
-		log.Fatalf("Opening blob store: %v", err)
+		ctrl.Fatalf("Opening blob store: %v", err)
 	}
 
 	// Load the root of the filesystem.
 	pi, err := config.OpenPath(ctx, s.Store, s.RootKey)
 	if err != nil {
-		log.Fatalf("Loading root path: %v", err)
+		ctrl.Fatalf("Loading root path: %v", err)
 	}
 	s.Path = pi
 	if pi.Root != nil {
-		s.logf("Loaded filesystem from %q (%s)", pi.RootKey, config.FormatKey(pi.FileKey))
+		s.Logf("Loaded filesystem from %q (%s)", pi.RootKey, config.FormatKey(pi.FileKey))
 		if pi.Root.Description != "" {
-			s.logf("| Description: %q", pi.Root.Description)
+			s.Logf("| Description: %q", pi.Root.Description)
 		}
 	} else {
-		s.logf("Loaded filesystem at %s (no root pointer)", config.FormatKey(pi.FileKey))
+		s.Logf("Loaded filesystem at %s (no root pointer)", config.FormatKey(pi.FileKey))
 	}
 }
 
 // Mount establishes a connection for the filesystem mount point and prepares
 // the filesystem root for service.
-func (s *Service) Mount() error {
-	opts := s.MountOptions
+func (s *Service) Mount(ctx context.Context) error {
 	if s.ReadOnly {
-		opts = append(opts, fuse.ReadOnly())
+		s.Options.MountOptions.Options = append(s.Options.MountOptions.Options, "ro")
 	}
 
 	var err error
-	s.Conn, err = fuse.Mount(s.MountPath, opts...)
+	s.Server, err = fs.Mount(s.MountPath, ffuse.NewFS(s.Path.File), &s.Options)
 	if err != nil {
 		return err
+	} else if err := s.Server.WaitMount(); err != nil {
+		return errors.Join(err, s.Server.Unmount())
 	}
-
-	s.FileServer = fs.New(s.Conn, nil)
-	s.FS = ffuse.New(s.Path.File, s.FileServer, &s.Options)
 	return nil
 }
 
-// Run starts the file service and runs until it exits or ctx ends.
+// Run mounts the filesystem, if necessary, and starts up background tasks to
+// monitor for completion of ctx.
 func (s *Service) Run(ctx context.Context) error {
-	// Start the server running and wait for the connection to be ready.
-	done := make(chan error, 1)
-	go func() {
-		defer close(done)
-		done <- s.FileServer.Serve(s.FS)
-	}()
-
-	<-s.Conn.Ready
-	if err := s.Conn.MountError; err != nil {
-		s.Conn.Close()
-		return err
+	if s.Server == nil {
+		if err := s.Mount(ctx); err != nil {
+			return fmt.Errorf("mount: %w", err)
+		}
 	}
+	defer func() { s.Server.Wait(); s.Logf("Server exited") }()
 
 	// If we are supposed to auto-flush, set up a task to do that now.
 	if s.AutoFlush > 0 {
-		s.logf("Enabling auto-flush every %v", s.AutoFlush)
+		s.Logf("Enabling auto-flush every %v", s.AutoFlush)
 		go s.autoFlush(ctx, s.AutoFlush)
 	}
 
-	// If we are supposed to execute a command, do that now.
+	// If a subcommand was requested, start it now.
 	var errc chan error
 	if s.Exec {
-		name := s.Args[0]
-		s.logf("Starting subprocess %q", name)
-		cmd := exec.CommandContext(ctx, name, s.Args[1:]...)
+		name := flag.Arg(0)
+		s.Logf("Starting subprocess %q", name)
+		cmd := exec.CommandContext(ctx, name, flag.Args()[1:]...)
 		cmd.Dir = s.MountPath
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -170,43 +159,22 @@ func (s *Service) Run(ctx context.Context) error {
 		}()
 	}
 
-	unmount := func() {
-		s.logf("Unmounting %q", s.MountPath)
-		if err := fuse.Unmount(s.MountPath); err != nil {
+	select {
+	case <-ctx.Done():
+		log.Printf("Received signal, unmounting...")
+		if err := svc.Server.Unmount(); err != nil {
 			log.Printf("WARNING: Unmount failed: %v", err)
 		}
-	}
-	select {
-	case err := <-done:
-		return err
-
+		return nil
 	case err := <-errc:
-		unmount()
-		return err
-
-	case <-ctx.Done():
-		unmount()
-		return errors.New("terminated by signal")
-	}
-}
-
-// Shutdown closes the FUSE connection and flushes any unsaved data back out to
-// the blob store.
-func (s *Service) Shutdown(ctx context.Context) {
-	if err := s.Conn.Close(); err != nil {
-		log.Printf("WARNING: closing fuse connection failed: %v", err)
-	} else {
-		s.logf("Closed fuse connection")
-	}
-	if !s.ReadOnly {
-		rk, err := s.Path.Flush(ctx)
 		if err != nil {
-			s.Store.Close(ctx)
-			log.Fatalf("Flushing file data: %v", err)
+			log.Printf("Error from subprocess: %v", err)
 		}
-		fmt.Printf("%s\n", config.FormatKey(rk))
+		if err := svc.Server.Unmount(); err != nil {
+			log.Printf("WARNING: Unmount failed: %v", err)
+		}
+		return err
 	}
-	s.Store.Close(ctx)
 }
 
 func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
@@ -215,25 +183,16 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 	for {
 		select {
 		case <-ctx.Done():
-			s.logf("Stopping auto-flush routine")
+			s.Logf("Stopping auto-flush routine")
 			return
 		case <-t.C:
 			oldKey := s.Path.BaseKey
-			newKey, err := s.flushRoot(ctx)
+			newKey, err := s.Path.Flush(ctx)
 			if err != nil {
 				log.Printf("WARNING: Error flushing root: %v", err)
 			} else if oldKey != newKey {
-				s.logf("Root flushed, storage key is now %s", config.FormatKey(newKey))
+				s.Logf("Root flushed, storage key is now %s", config.FormatKey(newKey))
 			}
 		}
 	}
-}
-
-func (s *Service) flushRoot(ctx context.Context) (newKey string, err error) {
-	// We need to lock out filesystem operations while we do this, since it may
-	// update state deeper inside the tree.
-	s.FS.WithRoot(func(_ *file.File) {
-		newKey, err = s.Path.Flush(ctx)
-	})
-	return
 }
