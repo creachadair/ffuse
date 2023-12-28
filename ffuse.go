@@ -51,6 +51,7 @@ type FS struct {
 var (
 	_ fs.InodeEmbedder = (*FS)(nil)
 
+	_ fs.NodeAccesser      = (*FS)(nil)
 	_ fs.NodeCreater       = (*FS)(nil)
 	_ fs.NodeFsyncer       = (*FS)(nil)
 	_ fs.NodeGetattrer     = (*FS)(nil)
@@ -70,6 +71,32 @@ var (
 	_ fs.NodeSymlinker     = (*FS)(nil)
 	_ fs.NodeUnlinker      = (*FS)(nil)
 )
+
+// Access implements the fs.NodeAccesser interface.
+func (f *FS) Access(ctx context.Context, mask uint32) errno {
+	caller, ok := fuse.FromContext(ctx)
+	if !ok {
+		return syscall.ENOSYS
+	}
+	s := f.file.Stat()
+	bits := uint32(s.Mode.Perm())
+
+	// Root is not special inside the FUSE mount, so treat the caller as
+	// equivalent to owner of paths with ID 0.
+	if s.OwnerID == 0 || s.OwnerID == int(caller.Uid) {
+		bits >>= 6 // use owner bits
+	} else if s.GroupID == int(caller.Gid) {
+		bits >>= 3 // use group bits
+	} // default to world bits
+
+	// At this point bits has the relevant permissions in lsb.
+	// Mask off anything above that and compare.
+	bits &= 7
+	if mask&bits != mask {
+		return syscall.EACCES
+	}
+	return 0
+}
 
 // Create implements the fs.NodeCreater interface.
 func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *fuse.EntryOut) (in *fs.Inode, fh fs.FileHandle, _ uint32, _ errno) {
