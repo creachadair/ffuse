@@ -119,6 +119,7 @@ func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *f
 			Name: name,
 			Stat: &file.Stat{
 				Mode:    fromSysMode(mode, true),
+				ModTime: time.Now(),
 				OwnerID: int(caller.Uid),
 				GroupID: int(caller.Gid),
 			},
