@@ -73,6 +73,13 @@ func main() {
 		defer cancel()
 
 		if err := svc.Run(rctx); err != nil {
+			// The filesystem failed, so don't overwrite the root with changes.
+			// But do give the user feedback about the latest state.
+			if key, err := svc.Path.Base.Flush(ctx); err == nil {
+				fmt.Printf("state: %s\n", config.FormatKey(key))
+			} else {
+				log.Printf("WARNING: Flushing file state failed: %v", err)
+			}
 			ctrl.Fatalf("Filesystem failed: %v", err)
 		}
 
