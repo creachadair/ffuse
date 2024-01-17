@@ -553,11 +553,11 @@ func (h fileHandle) Flush(ctx context.Context) errno {
 
 func errorToErrno(err error) errno {
 	if err == nil {
-		return 0
+		return fs.OK
 	} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return syscall.EINTR
 	}
-	return syscall.EIO
+	return fs.ToErrno(err)
 }
 
 func fileStableAttr(file *file.File) fs.StableAttr {
