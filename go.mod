@@ -6,7 +6,7 @@ toolchain go1.21.3
 
 require (
 	github.com/creachadair/ctrl v0.1.1
-	github.com/creachadair/ffs v0.2.0
+	github.com/creachadair/ffs v0.2.1
 	github.com/creachadair/ffstools v0.4.0
 	github.com/creachadair/flax v0.0.0-20231211041532-4d51c109e3c1
 	github.com/creachadair/mds v0.7.0
@@ -16,8 +16,8 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20240117050012-2bab4b1e30b2 // indirect
-	github.com/creachadair/chirpstore v0.0.0-20240117053757-88a0ebc5dd30 // indirect
+	github.com/creachadair/chirp v0.0.0-20240117162640-64f0a7b6fe70 // indirect
+	github.com/creachadair/chirpstore v0.0.0-20240117055412-433c78f13506 // indirect
 	github.com/creachadair/taskgroup v0.7.1 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
