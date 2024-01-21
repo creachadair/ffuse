@@ -6,8 +6,8 @@ toolchain go1.21.3
 
 require (
 	github.com/creachadair/ctrl v0.1.1
-	github.com/creachadair/ffs v0.2.1
-	github.com/creachadair/ffstools v0.4.0
+	github.com/creachadair/ffs v0.2.4
+	github.com/creachadair/ffstools v0.4.1
 	github.com/creachadair/flax v0.0.0-20231211041532-4d51c109e3c1
 	github.com/creachadair/mds v0.7.0
 	github.com/hanwen/go-fuse/v2 v2.4.3-0.20231120175208-cbb13ba8d29c
