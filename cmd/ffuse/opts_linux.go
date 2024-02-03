@@ -12,6 +12,12 @@ import (
 
 var fuseOptions = fs.Options{
 	MountOptions: fuse.MountOptions{
+		// Because fusermount is setuid, the caller needs access both as root and
+		// as the owning user to have permission to traverse across it.
+		// This may require enabling user_allow_other in /etc/fuse.conf.
+		// TODO(creachadair): Is there a better way to handle this?
+		AllowOther: true,
+
 		FsName: "ffs",
 		Name:   "ffs",
 	},
