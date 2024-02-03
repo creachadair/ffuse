@@ -114,7 +114,8 @@ func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *f
 	} else if !errors.Is(err, file.ErrChildNotFound) {
 		return nil, nil, 0, errorToErrno(err)
 	} else {
-		// The file does not exist; create a new empty file or directory.
+		// The file does not exist; create a new empty file.
+		// Note that directories go through Mkdir instead.
 		nf = f.file.New(&file.NewOptions{
 			Name: name,
 			Stat: &file.Stat{
@@ -288,7 +289,9 @@ func (f *FS) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.Entr
 	nf := f.file.New(&file.NewOptions{
 		Name: name,
 		Stat: &file.Stat{
-			Mode:    fromSysMode(mode, true),
+			// N.B.: macOS FUSE populates S_IFMT, but Linux FUSE does not, so
+			// explicitly set the directory bit.
+			Mode:    fromSysMode(mode, true) | os.ModeDir,
 			ModTime: time.Now(),
 			OwnerID: int(caller.Uid),
 			GroupID: int(caller.Gid),
