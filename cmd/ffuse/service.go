@@ -134,7 +134,13 @@ func (s *Service) Run(ctx context.Context) error {
 			return fmt.Errorf("mount: %w", err)
 		}
 	}
-	defer func() { s.Server.Wait(); s.Logf("Server exited") }()
+	sctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() {
+		defer cancel()
+		s.Server.Wait()
+		s.Logf("Server exited")
+	}()
 
 	// If we are supposed to auto-flush, set up a task to do that now.
 	if s.AutoFlush > 0 {
@@ -147,7 +153,7 @@ func (s *Service) Run(ctx context.Context) error {
 	if s.Exec {
 		name := flag.Arg(0)
 		s.Logf("Starting subprocess %q", name)
-		cmd := exec.CommandContext(ctx, name, flag.Args()[1:]...)
+		cmd := exec.CommandContext(sctx, name, flag.Args()[1:]...)
 		cmd.Dir = s.MountPath
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -160,7 +166,7 @@ func (s *Service) Run(ctx context.Context) error {
 	}
 
 	select {
-	case <-ctx.Done():
+	case <-sctx.Done():
 		log.Printf("Received signal, unmounting...")
 		if err := svc.Server.Unmount(); err != nil {
 			log.Printf("WARNING: Unmount failed: %v", err)
@@ -173,6 +179,7 @@ func (s *Service) Run(ctx context.Context) error {
 		if err := svc.Server.Unmount(); err != nil {
 			log.Printf("WARNING: Unmount failed: %v", err)
 		}
+		<-sctx.Done()
 		return err
 	}
 }
