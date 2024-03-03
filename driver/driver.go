@@ -56,17 +56,25 @@ type Service struct {
 	Exec     bool     `flag:"exec,Execute a command, then unmount and exit"`
 	ExecArgs []string // command arguments, required if --exec is true
 
-	// Log target (if nil, uses log.Printf).
+	// Logf, if set, is used as the target for log output.  If nil, the service
+	// uses log.Printf. To suppress all log output, populate a no-op function.
 	Logf func(string, ...any)
+
+	// Store, if set, is used as the blob storage for filesystem operations.  In
+	// that case, no configuration file is loaded. Otherwise Store will be
+	// populated based on the config file.
+	Store config.CAS
+
+	// Config, if set, is used to locate blob storage settings.  If nil, it is
+	// set by Init if Store is not set.  If Store is set, Config is ignored.
+	Config *config.Settings
+
+	// Path is set by Init to the path info for the filesystem root.
+	Path *config.PathInfo
 
 	// Fuse library settings.
 	Options fs.Options
-	Server  *fuse.Server
-
-	// Blob storage.
-	Config *config.Settings
-	Store  config.CAS
-	Path   *config.PathInfo
+	Server  *fuse.Server // populated by Mount or Run
 }
 
 func (s *Service) logPrintf(msg string, args ...any) {
@@ -100,38 +108,40 @@ func (s *Service) Init(ctx context.Context) error {
 		return errors.New("missing exec command")
 	}
 
-	// Load configuration file.
-	cf, err := config.Load(config.Path())
-	if err != nil {
-		return fmt.Errorf("load configuration: %w", err)
-	}
-	if s.StoreSpec != "" {
-		cf.DefaultStore = s.StoreSpec
-	} else {
-		// Copy the default so it shows up in /status.
-		s.StoreSpec = cf.DefaultStore
-	}
-	if s.DebugLog&debugFFS != 0 {
-		cf.EnableDebugLogging = true
-	}
-	if s.DebugLog&debugFUSE != 0 {
-		s.Options.MountOptions.Logger = log.New(os.Stderr, "FUSE: ", log.LstdFlags|log.Lmicroseconds)
-		s.Options.MountOptions.Debug = true
+	// If s does not yet have a Store, load the configuration file and populate
+	// one based on the StoreSpec.
+	if s.Store == (config.CAS{}) {
+		if s.Config == nil {
+			cf, err := config.Load(config.Path())
+			if err != nil {
+				return fmt.Errorf("load configuration: %w", err)
+			}
+			s.Config = cf
+		}
+
+		if s.StoreSpec != "" {
+			s.Config.DefaultStore = s.StoreSpec
+		} else {
+			// Copy the default so it shows up in /status.
+			s.StoreSpec = s.Config.DefaultStore
+		}
+		if s.DebugLog&debugFFS != 0 {
+			s.Config.EnableDebugLogging = true
+		}
+
+		st, err := s.Config.OpenStore(ctx)
+		if err != nil {
+			return fmt.Errorf("opening blob store: %w", err)
+		}
+		s.Store = st
 	}
 
-	// Open blob store.
-	st, err := cf.OpenStore(ctx)
-	if err != nil {
-		return fmt.Errorf("opening blob store: %w", err)
-	}
 	// Load the root of the filesystem.
-	pi, err := config.OpenPath(ctx, st, s.RootKey)
+	pi, err := config.OpenPath(ctx, s.Store, s.RootKey)
 	if err != nil {
-		st.Close(ctx)
+		s.Store.Close(ctx)
 		return fmt.Errorf("load root path: %w", err)
 	}
-	s.Config = cf
-	s.Store = st
 	s.Path = pi
 	if pi.Root != nil {
 		s.vlogf("Loaded filesystem from %q (%s)", pi.RootKey, config.FormatKey(pi.FileKey))
@@ -141,6 +151,13 @@ func (s *Service) Init(ctx context.Context) error {
 	} else {
 		s.vlogf("Loaded filesystem at %s (no root pointer)", config.FormatKey(pi.FileKey))
 	}
+
+	// If requested, hook up a logger for the FUSE internals (very noisy).
+	if s.DebugLog&debugFUSE != 0 {
+		s.Options.MountOptions.Logger = log.New(os.Stderr, "FUSE: ", log.LstdFlags|log.Lmicroseconds)
+		s.Options.MountOptions.Debug = true
+	}
+
 	return nil
 }
 
