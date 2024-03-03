@@ -27,27 +27,28 @@ import (
 
 	"github.com/creachadair/ctrl"
 	"github.com/creachadair/ffstools/ffs/config"
+	"github.com/creachadair/ffuse/driver"
 	"github.com/creachadair/flax"
 )
 
-var svc = &Service{Options: fuseOptions}
+var svc = &driver.Service{Options: fuseOptions}
 
 func init() {
 	flax.MustBind(flag.CommandLine, svc)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-read-only] -store addr -mount path -root key[/path...]
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s [--read-only] --store addr --mount path --root key[/path...]
 
 Mount a FFS filesystem via FUSE at the specified -mount path, using the store
 described by addr. The starting point for the mount may be the name of a
 root pointer, or a path relative to a root pointer, or a specific storage key
 prefixed by "@".
 
-If -store is not set, the FFS_STORE environment variable is used as a default
+If --store is not set, the FFS_STORE environment variable is used as a default
 if it is defined; otherwise the default from the FFS config file is used or an
 error is reported.
 
-If -exec is set, the non-flag arguments remaining on the command line are
+If --exec is set, the non-flag arguments remaining on the command line are
 executed as a subprocess with the current working directory set to the mount
 point, and when the subprocess exits the filesystem is unmounted. The stdin
 of %[1]s is piped to the subprocess, and the subprocess's stdout and stderr
@@ -62,10 +63,13 @@ Options:
 func main() {
 	flag.Parse()
 	log.SetPrefix("[ffuse] ")
+	svc.ExecArgs = flag.Args()
 
 	ctrl.Run(func() error {
 		ctx := context.Background()
-		svc.Init(ctx)
+		if err := svc.Init(ctx); err != nil {
+			return err
+		}
 		defer svc.Store.Close(ctx)
 
 		// Set up a context to propagate signals to the serving loop.
