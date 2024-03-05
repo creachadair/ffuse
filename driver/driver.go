@@ -44,17 +44,15 @@ const (
 // Run mounts the fileysystem if it has not already been done, but if you need
 // to perform tasks after mounting, you may call Mount separately before Run.
 type Service struct {
-	MountPath string `flag:"mount,Path of mount point (required)"`
-	RootKey   string `flag:"root,Root path or @file-key of filesystem root (required)"`
-	StoreSpec string `flag:"store,default=$FFS_STORE,Blob storage address (required)"`
-
-	ReadOnly  bool          `flag:"read-only,Mount the filesystem as read-only"`
-	DebugLog  int           `flag:"debug,Set debug logging level (1=ffs, 2=fuse, 3=both)"`
-	AutoFlush time.Duration `flag:"auto-flush,Automatically flush the root at this interval"`
-	Verbose   bool          `flag:"v,Enable verbose logging"`
-
-	Exec     bool     `flag:"exec,Execute a command, then unmount and exit"`
-	ExecArgs []string // command arguments, required if --exec is true
+	MountPath string // required
+	RootKey   string // required
+	StoreSpec string // optional
+	ReadOnly  bool
+	DebugLog  int
+	AutoFlush time.Duration
+	Verbose   bool
+	Exec      bool
+	ExecArgs  []string // command arguments, required if --exec is true
 
 	// Logf, if set, is used as the target for log output.  If nil, the service
 	// uses log.Printf. To suppress all log output, populate a no-op function.
