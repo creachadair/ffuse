@@ -24,29 +24,23 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"github.com/creachadair/ctrl"
 	"github.com/creachadair/ffstools/ffs/config"
 	"github.com/creachadair/ffuse/driver"
-	"github.com/creachadair/flax"
 )
 
 var svc = &driver.Service{Options: fuseOptions}
 
-var flags struct {
-	MountPath string        `flag:"mount,Path of mount point (required)"`
-	RootKey   string        `flag:"root,Root path or @file-key of filesystem root (required)"`
-	StoreSpec string        `flag:"store,default=$FFS_STORE,Blob storage address"`
-	ReadOnly  bool          `flag:"read-only,Mount the filesystem as read-only"`
-	DebugLog  int           `flag:"debug,Set debug logging level (1=ffs, 2=fuse, 3=both)"`
-	AutoFlush time.Duration `flag:"auto-flush,Automatically flush the root at this interval"`
-	Verbose   bool          `flag:"v,Enable verbose logging"`
-	Exec      bool          `flag:"exec,Execute a command, then unmount and exit"`
-}
-
 func init() {
-	flax.MustBind(flag.CommandLine, &flags)
+	flag.StringVar(&svc.MountPath, "mount", "", "Path of mount point (required)")
+	flag.StringVar(&svc.RootKey, "root", "", "Root path or @file-key of filesystem root (required)")
+	flag.StringVar(&svc.StoreSpec, "store", os.Getenv("FFS_STORE"), "Blob storage address")
+	flag.BoolVar(&svc.ReadOnly, "read-only", false, "Mount the filesystem as read-only")
+	flag.IntVar(&svc.DebugLog, "debug", 0, "Set debug logging level (1=ffs, 2=fuse, 3=both)")
+	flag.DurationVar(&svc.AutoFlush, "auto-flush", 0, "Automatically flush the root at this interval")
+	flag.BoolVar(&svc.Verbose, "v", false, "Enable verbose logging")
+	flag.BoolVar(&svc.Exec, "exec", false, "Execute a command, then unmount and exit")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %[1]s [--read-only] --store addr --mount path --root key[/path...]
@@ -76,14 +70,6 @@ func main() {
 	flag.Parse()
 	log.SetPrefix("[ffuse] ")
 
-	svc.MountPath = flags.MountPath
-	svc.RootKey = flags.RootKey
-	svc.StoreSpec = flags.StoreSpec
-	svc.ReadOnly = flags.ReadOnly
-	svc.DebugLog = flags.DebugLog
-	svc.AutoFlush = flags.AutoFlush
-	svc.Verbose = flags.Verbose
-	svc.Exec = flags.Exec
 	svc.ExecArgs = flag.Args()
 
 	ctrl.Run(func() error {
