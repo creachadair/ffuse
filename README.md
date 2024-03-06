@@ -1,6 +1,6 @@
 # ffuse: FUSE driver for FFS
 
-**Note:** The `cmd/ffuse` tool has been susperseded by the `mount` subcommand of the [`ffs` tool](https://github.com/creachadair/ffs/blob/main/ffs) and will probably be removed eventually.
+**Note:** The `cmd/ffuse` tool has been susperseded by the `mount` subcommand of the [`ffs` tool](https://github.com/creachadair/ffstools/blob/main/ffs) and will probably be removed eventually.
 
 [![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=yellowgreen)](https://pkg.go.dev/github.com/creachadair/ffuse)
 
