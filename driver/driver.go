@@ -17,11 +17,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-const (
-	debugFFS  = 1
-	debugFUSE = 2
-)
-
 // Service manages the mounting, unmounting, and service of requests for a FUSE
 // filesystem. The caller must populate the fields marked as required.
 //
@@ -44,12 +39,14 @@ const (
 // Run mounts the fileysystem if it has not already been done, but if you need
 // to perform tasks after mounting, you may call Mount separately before Run.
 type Service struct {
+	// Store is used as the blob storage for filesystem operations (required)
+	Store config.CAS
+
 	MountPath string // required
 	RootKey   string // required
-	StoreSpec string // optional
 	ReadOnly  bool
-	DebugLog  int
 	AutoFlush time.Duration
+	DebugLog  bool
 	Verbose   bool
 	Exec      bool
 	ExecArgs  []string // command arguments, required if --exec is true
@@ -57,15 +54,6 @@ type Service struct {
 	// Logf, if set, is used as the target for log output.  If nil, the service
 	// uses log.Printf. To suppress all log output, populate a no-op function.
 	Logf func(string, ...any)
-
-	// Store, if set, is used as the blob storage for filesystem operations.  In
-	// that case, no configuration file is loaded. Otherwise Store will be
-	// populated based on the config file.
-	Store config.CAS
-
-	// Config, if set, is used to locate blob storage settings.  If nil, it is
-	// set by Init if Store is not set.  If Store is set, Config is ignored.
-	Config *config.Settings
 
 	// Path is set by Init to the path info for the filesystem root.
 	Path *config.PathInfo
@@ -94,8 +82,10 @@ func (s *Service) vlogf(msg string, args ...any) {
 // Init checks the settings, and loads the initial filesystem state from the
 // specified blob store. It terminates the process if any of these steps fail.
 func (s *Service) Init(ctx context.Context) error {
-	// Check flags for consistency.
+	// Check settings for consistency.
 	switch {
+	case s.Store == (config.CAS{}):
+		return errors.New("missing store implementation")
 	case s.MountPath == "":
 		return errors.New("missing mount path")
 	case s.RootKey == "":
@@ -106,38 +96,9 @@ func (s *Service) Init(ctx context.Context) error {
 		return errors.New("missing exec command")
 	}
 
-	// If s does not yet have a Store, load the configuration file and populate
-	// one based on the StoreSpec.
-	if s.Store == (config.CAS{}) {
-		if s.Config == nil {
-			cf, err := config.Load(config.Path())
-			if err != nil {
-				return fmt.Errorf("load configuration: %w", err)
-			}
-			s.Config = cf
-		}
-
-		if s.StoreSpec != "" {
-			s.Config.DefaultStore = s.StoreSpec
-		} else {
-			// Copy the default so it shows up in /status.
-			s.StoreSpec = s.Config.DefaultStore
-		}
-		if s.DebugLog&debugFFS != 0 {
-			s.Config.EnableDebugLogging = true
-		}
-
-		st, err := s.Config.OpenStore(ctx)
-		if err != nil {
-			return fmt.Errorf("opening blob store: %w", err)
-		}
-		s.Store = st
-	}
-
 	// Load the root of the filesystem.
 	pi, err := config.OpenPath(ctx, s.Store, s.RootKey)
 	if err != nil {
-		s.Store.Close(ctx)
 		return fmt.Errorf("load root path: %w", err)
 	}
 	s.Path = pi
@@ -151,7 +112,7 @@ func (s *Service) Init(ctx context.Context) error {
 	}
 
 	// If requested, hook up a logger for the FUSE internals (very noisy).
-	if s.DebugLog&debugFUSE != 0 {
+	if s.DebugLog {
 		s.Options.MountOptions.Logger = log.New(os.Stderr, "FUSE: ", log.LstdFlags|log.Lmicroseconds)
 		s.Options.MountOptions.Debug = true
 	}

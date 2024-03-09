@@ -30,14 +30,17 @@ import (
 	"github.com/creachadair/ffuse/driver"
 )
 
-var svc = &driver.Service{Options: fuseOptions}
+var (
+	svc = &driver.Service{Options: fuseOptions}
+
+	storeSpec = flag.String("store", os.Getenv("FFS_STORE"), "Blob storage address")
+)
 
 func init() {
 	flag.StringVar(&svc.MountPath, "mount", "", "Path of mount point (required)")
 	flag.StringVar(&svc.RootKey, "root", "", "Root path or @file-key of filesystem root (required)")
-	flag.StringVar(&svc.StoreSpec, "store", os.Getenv("FFS_STORE"), "Blob storage address")
 	flag.BoolVar(&svc.ReadOnly, "read-only", false, "Mount the filesystem as read-only")
-	flag.IntVar(&svc.DebugLog, "debug", 0, "Set debug logging level (1=ffs, 2=fuse, 3=both)")
+	flag.BoolVar(&svc.DebugLog, "debug", false, "Enable FUSE debug logging (warning: prolific)")
 	flag.DurationVar(&svc.AutoFlush, "auto-flush", 0, "Automatically flush the root at this interval")
 	flag.BoolVar(&svc.Verbose, "v", false, "Enable verbose logging")
 	flag.BoolVar(&svc.Exec, "exec", false, "Execute a command, then unmount and exit")
@@ -74,6 +77,26 @@ func main() {
 
 	ctrl.Run(func() error {
 		ctx := context.Background()
+
+		// Load FFS configuration.
+		cf, err := config.Load(config.Path())
+		if err != nil {
+			return fmt.Errorf("load configuration: %w", err)
+		}
+		if *storeSpec != "" {
+			cf.DefaultStore = *storeSpec
+		}
+		if svc.DebugLog {
+			cf.EnableDebugLogging = true
+		}
+
+		// Open blob storage.
+		st, err := cf.OpenStore(ctx)
+		if err != nil {
+			return fmt.Errorf("open store: %w", err)
+		}
+		svc.Store = st
+
 		if err := svc.Init(ctx); err != nil {
 			return err
 		}
