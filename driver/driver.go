@@ -137,6 +137,10 @@ func (s *Service) Mount(ctx context.Context) error {
 	return nil
 }
 
+// errServerExited is a sentinel error reported as the cause of cancellation
+// when the FUSE server exits, e.g., in response to an external unmount.
+var errServerExited = errors.New("server exited")
+
 // Run mounts the filesystem, if necessary, and starts up background tasks to
 // monitor for completion of ctx.
 func (s *Service) Run(ctx context.Context) error {
@@ -145,12 +149,11 @@ func (s *Service) Run(ctx context.Context) error {
 			return fmt.Errorf("mount: %w", err)
 		}
 	}
-	sctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	sctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 	go func() {
-		defer cancel()
+		defer cancel(errServerExited)
 		s.Server.Wait()
-		s.vlogf("Server exited")
 	}()
 
 	// If we are supposed to auto-flush, set up a task to do that now.
@@ -178,9 +181,13 @@ func (s *Service) Run(ctx context.Context) error {
 
 	select {
 	case <-sctx.Done():
-		s.logPrintf("Received signal, unmounting...")
-		if err := s.Server.Unmount(); err != nil {
-			s.logPrintf("WARNING: Unmount failed: %v", err)
+		if errors.Is(context.Cause(sctx), errServerExited) {
+			s.logPrintf("Server exited (filesystem unmounted)")
+		} else {
+			s.logPrintf("Received signal, unmounting...")
+			if err := s.Server.Unmount(); err != nil {
+				s.logPrintf("WARNING: Unmount failed: %v", err)
+			}
 		}
 		return nil
 	case err := <-errc:
