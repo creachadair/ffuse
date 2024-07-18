@@ -523,7 +523,11 @@ func (h fileHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.Read
 
 // Release implements the fs.FileReleaser interface.
 func (h fileHandle) Release(ctx context.Context) errno {
-	h.fs.file.Child().Release() // un-pin cached child files
+	// TODO(creachadair): It would be nice to un-pin cached child files when a
+	// directory is released.  However, this can have the side-effect of
+	// dropping subtrees that still have open file descriptors below.
+	// Figure out a way to make this safe.
+	//h.fs.file.Child().Release()
 	return errorToErrno(nil)
 }
 
