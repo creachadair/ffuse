@@ -138,7 +138,7 @@ func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *f
 	nfs := &FS{file: nf}
 	nfs.fillAttr(&out.Attr)
 	in = f.NewInode(ctx, nfs, fileStableAttr(nf))
-	fh = fileHandle{fs: nfs, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}
+	fh = &fileHandle{fs: nfs, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}
 	return
 }
 
@@ -305,7 +305,7 @@ func (f *FS) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.Entr
 
 // Open implements the fs.NodeOpener interface.
 func (f *FS) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, errno) {
-	return fileHandle{fs: f, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}, 0, 0
+	return &fileHandle{fs: f, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}, 0, 0
 }
 
 // Readdir implements the fs.NodeReaddirer interface.
@@ -491,11 +491,11 @@ func (f *FS) Unlink(ctx context.Context, name string) errno {
 
 // Verify that filehandles support interfaces required by the FUSE integration.
 var (
-	_ fs.FileGetattrer = fileHandle{}
-	_ fs.FileReader    = fileHandle{}
-	_ fs.FileReleaser  = fileHandle{}
-	_ fs.FileFlusher   = fileHandle{}
-	_ fs.FileWriter    = fileHandle{}
+	_ fs.FileGetattrer = &fileHandle{}
+	_ fs.FileReader    = &fileHandle{}
+	_ fs.FileReleaser  = &fileHandle{}
+	_ fs.FileFlusher   = &fileHandle{}
+	_ fs.FileWriter    = &fileHandle{}
 )
 
 type fileHandle struct {
