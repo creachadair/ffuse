@@ -190,6 +190,7 @@ const (
 	ffsStorageKeyB64 = ffsStorageKey + ".b64"
 	ffsDataHash      = "ffs.dataHash"
 	ffsDataHashB64   = ffsDataHash + ".b64"
+	ffsLinkTo        = "ffs.link."
 )
 
 // Getxattr implements the fs.NodeGetxattrer interface.
@@ -434,13 +435,38 @@ func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint3
 	if strings.HasPrefix(attr, ffsStorageKey) || strings.HasPrefix(attr, ffsDataHash) {
 		return syscall.EPERM // virtual attributes, not writable
 	}
-	xa := f.file.XAttr()
-	if xa.Has(attr) && flags&xattrCreate != 0 {
-		return syscall.EEXIST // create, but it already exists
-	} else if flags&xattrReplace != 0 {
-		return xattrErrnoNotFound // replace, but it doesn't exist
+
+	// If f is a directory, then setting ffs.linkTo.<name> causes <name> to be
+	// set or replaced as a child of f, pointing to the file whose storage key
+	// is given in the value.
+	if t, ok := strings.CutPrefix(attr, ffsLinkTo); ok {
+		if !f.file.Stat().Mode.IsDir() {
+			return syscall.EPERM // only allow linking in a directory
+		} else if t == "" || strings.ContainsAny(t, "/\x00") {
+			return syscall.EINVAL // disallow empty names, directory separators, NUL
+		}
+		exists := f.file.Child().Has(t)
+		if exists && flags&xattrCreate != 0 {
+			return syscall.EEXIST
+		} else if !exists && flags&xattrReplace != 0 {
+			return syscall.ENOENT
+		}
+
+		tf, err := f.file.Load(ctx, string(data))
+		if err != nil {
+			return syscall.ENOENT
+		}
+		f.file.Child().Set(t, tf)
+		return 0
 	}
 
+	xa := f.file.XAttr()
+	exists := xa.Has(attr)
+	if exists && flags&xattrCreate != 0 {
+		return syscall.EEXIST // create, but it already exists
+	} else if !exists && flags&xattrReplace != 0 {
+		return xattrErrnoNotFound // replace, but it doesn't exist
+	}
 	xa.Set(attr, string(data))
 	return 0
 }
