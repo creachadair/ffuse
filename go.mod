@@ -6,15 +6,15 @@ toolchain go1.23.1
 
 require (
 	github.com/creachadair/ffs v0.6.5
-	github.com/creachadair/ffstools v0.7.3
+	github.com/creachadair/ffstools v0.7.9
 	github.com/hanwen/go-fuse/v2 v2.5.1
 	golang.org/x/crypto v0.27.0
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20240811160328-0c7bc43ea2f9 // indirect
-	github.com/creachadair/chirpstore v0.0.0-20240810153022-f29119a6023b // indirect
+	github.com/creachadair/chirp v0.0.0-20240914153317-f9c32f3165d9 // indirect
+	github.com/creachadair/chirpstore v0.0.0-20240912175028-c907de597c37 // indirect
 	github.com/creachadair/mds v0.21.2 // indirect
 	github.com/creachadair/taskgroup v0.9.4 // indirect
 	golang.org/x/sys v0.25.0 // indirect
