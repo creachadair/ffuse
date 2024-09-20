@@ -361,7 +361,7 @@ func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 			return syscall.EPERM
 		}
 		if !f.file.Child().Remove(t) {
-			return syscall.ENOENT
+			return xattrErrnoNotFound
 		}
 		return 0
 	}
