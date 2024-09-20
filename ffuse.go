@@ -20,9 +20,11 @@ package ffuse
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"io"
 	"os"
+	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -188,29 +190,40 @@ func (f *FS) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) e
 const (
 	ffsStorageKey    = "ffs.storageKey"
 	ffsStorageKeyB64 = ffsStorageKey + ".b64"
+	ffsStorageKeyHex = ffsStorageKey + ".hex"
 	ffsDataHash      = "ffs.dataHash"
 	ffsDataHashB64   = ffsDataHash + ".b64"
+	ffsDataHashHex   = ffsDataHash + ".hex"
 	ffsLinkTo        = "ffs.link."
 )
+
+// xattrEncoding returns an encoding function for the specified xattr name.
+// This should only be used for the "ffs.*" attributes.
+func xattrEncoding(name string) func([]byte) string {
+	switch path.Ext(name) {
+	case ".b64":
+		return base64.StdEncoding.EncodeToString
+	case ".hex":
+		return hex.EncodeToString
+	default:
+		return nil
+	}
+}
 
 // Getxattr implements the fs.NodeGetxattrer interface.
 func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, errno) {
 	buf := dest[:0]
-	var encode bool
+	var encode func([]byte) string
 	switch attr {
-	case ffsStorageKeyB64:
-		encode = true
-		fallthrough
-	case ffsStorageKey:
+	case ffsStorageKey, ffsStorageKeyB64, ffsStorageKeyHex:
+		encode = xattrEncoding(attr)
 		key, err := f.file.Flush(ctx)
 		if err != nil {
 			return 0, errorToErrno(err)
 		}
 		buf = append(buf, key...)
-	case ffsDataHashB64:
-		encode = true
-		fallthrough
-	case ffsDataHash:
+	case ffsDataHash, ffsDataHashB64, ffsDataHashHex:
+		encode = xattrEncoding(attr)
 		h := sha3.New256()
 		for _, key := range f.file.Data().Keys() {
 			io.WriteString(h, key)
@@ -223,9 +236,8 @@ func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, er
 		}
 		buf = append(buf, xa.Get(attr)...)
 	}
-	if encode {
-		enc := base64.StdEncoding.EncodeToString(buf)
-		buf = append(buf[:0], enc...)
+	if encode != nil {
+		buf = append(buf[:0], encode(buf)...)
 	}
 	if len(buf) > len(dest) {
 		return uint32(len(buf)), syscall.ERANGE
