@@ -363,6 +363,7 @@ func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 		if !f.file.Child().Remove(t) {
 			return xattrErrnoNotFound
 		}
+		go f.NotifyEntry(t) // outside the lock
 		return 0
 	}
 	xa := f.file.XAttr()
@@ -482,6 +483,7 @@ func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint3
 			return syscall.ENOENT
 		}
 		f.file.Child().Set(t, tf)
+		go f.NotifyEntry(t) // outside the lock
 		return 0
 	}
 
