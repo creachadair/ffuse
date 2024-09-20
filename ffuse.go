@@ -352,6 +352,19 @@ func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 	if strings.HasPrefix(attr, ffsStorageKey) || strings.HasPrefix(attr, ffsDataHash) {
 		return syscall.EPERM // virtual attributes, not writable
 	}
+
+	// If f is a directory, then removing ffs.link.<name> causes <name> to be
+	// unlinked as a child of f, regardless of its type. This differs from
+	// Unlink in that it can immediately unlink a complete directory.
+	if t, ok := strings.CutPrefix(attr, ffsLinkTo); ok {
+		if !f.file.Stat().Mode.IsDir() {
+			return syscall.EPERM
+		}
+		if !f.file.Child().Remove(t) {
+			return syscall.ENOENT
+		}
+		return 0
+	}
 	xa := f.file.XAttr()
 	if !xa.Has(attr) {
 		return xattrErrnoNotFound
