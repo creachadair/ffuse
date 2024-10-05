@@ -181,7 +181,9 @@ func (f *FS) Fsync(ctx context.Context, fh fs.FileHandle, flags uint32) errno {
 // Getattr implements the fs.NodeGetattrer interface.
 func (f *FS) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) errno {
 	if fh != nil {
-		return fh.(fs.FileGetattrer).Getattr(ctx, out)
+		if ga, ok := fh.(fs.FileGetattrer); ok {
+			return ga.Getattr(ctx, out)
+		}
 	}
 	f.fillAttr(&out.Attr)
 	return 0
