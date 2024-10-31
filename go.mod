@@ -7,7 +7,7 @@ toolchain go1.23.1
 require (
 	github.com/creachadair/ffs v0.6.6
 	github.com/creachadair/ffstools v0.8.5
-	github.com/hanwen/go-fuse/v2 v2.6.1
+	github.com/hanwen/go-fuse/v2 v2.6.3
 	golang.org/x/crypto v0.28.0
 )
 
