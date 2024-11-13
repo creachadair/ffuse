@@ -36,8 +36,9 @@ import (
 // responsible for flushing out the final state of the filesystem, which can be
 // recovered from the PathInfo field.
 //
-// Run mounts the fileysystem if it has not already been done, but if you need
-// to perform tasks after mounting, you may call Mount separately before Run.
+// Run initalizes and mounts the fileysystem if these have not already been
+// done, but if you need to perform tasks before and after mounting, you may
+// call [Service.Init] and [Service.Mount] separately before Run.
 type Service struct {
 	// Store is used as the blob storage for filesystem operations (required)
 	Store config.CAS
@@ -81,6 +82,10 @@ func (s *Service) vlogf(msg string, args ...any) {
 
 // Init checks the settings, and loads the initial filesystem state from the
 // specified blob store. It terminates the process if any of these steps fail.
+//
+// The [Service.Mount] method calls Init if it has not already been run.  It is
+// therefore not necessary to call it explicitly unless you want to check the
+// success of initialization before attempting to mount.
 func (s *Service) Init(ctx context.Context) error {
 	// Check settings for consistency.
 	switch {
@@ -120,9 +125,18 @@ func (s *Service) Init(ctx context.Context) error {
 	return nil
 }
 
-// Mount establishes a connection for the filesystem mount point and prepares
-// the filesystem root for service.
+// Mount initializes the server, if necessary, then establishes a connection
+// for the filesystem mount point and prepares the filesystem root for service.
+//
+// The [Service.Run] method calls Mount if it has not already been run. It is
+// therefore not necessaryu to call it explicitly unless you want to check the
+// success of mounting before attempting to serve requests.
 func (s *Service) Mount(ctx context.Context) error {
+	if s.Path == nil {
+		if err := s.Init(ctx); err != nil {
+			return err
+		}
+	}
 	if s.ReadOnly {
 		s.Options.MountOptions.Options = append(s.Options.MountOptions.Options, "ro")
 	}
@@ -141,8 +155,17 @@ func (s *Service) Mount(ctx context.Context) error {
 // when the FUSE server exits, e.g., in response to an external unmount.
 var errServerExited = errors.New("server exited")
 
-// Run mounts the filesystem, if necessary, and starts up background tasks to
-// monitor for completion of ctx.
+// Run initializes and mounts the filesystem, if necessary, then starts up
+// background tasks to monitor for completion of ctx. If enabled, Run also
+// starts a background task to periodically flush the filesystem root.
+//
+// Run blocks until the filesystem is unmounted or ctx ends. If ctx ends before
+// the filesystem unmounts, Run attempts to unmount it before returning.
+//
+// If s.Exec is true, Run executes the specified command in a subprocess with
+// its current working directory set to the root of the mount path. In this
+// case, when the subprocess exits, Run umounts the filesystem explicitly and
+// returns to the caller.
 func (s *Service) Run(ctx context.Context) error {
 	if s.Server == nil {
 		if err := s.Mount(ctx); err != nil {
