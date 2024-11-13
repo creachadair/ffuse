@@ -74,7 +74,7 @@ var (
 	_ fs.NodeUnlinker      = (*FS)(nil)
 )
 
-// Access implements the fs.NodeAccesser interface.
+// Access implements the [fs.NodeAccesser] interface.
 func (f *FS) Access(ctx context.Context, mask uint32) errno {
 	caller, ok := fuse.FromContext(ctx)
 	if !ok {
@@ -100,7 +100,7 @@ func (f *FS) Access(ctx context.Context, mask uint32) errno {
 	return 0
 }
 
-// Create implements the fs.NodeCreater interface.
+// Create implements the [fs.NodeCreater] interface.
 func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *fuse.EntryOut) (in *fs.Inode, fh fs.FileHandle, _ uint32, _ errno) {
 	caller, ok := fuse.FromContext(ctx)
 	if !ok {
@@ -172,13 +172,13 @@ func (f *FS) fillAttr(out *fuse.Attr) {
 	out.Nlink = nlink
 }
 
-// Fsync implements the fs.NodeFsyncer interface.
+// Fsync implements the [fs.NodeFsyncer] interface.
 func (f *FS) Fsync(ctx context.Context, fh fs.FileHandle, flags uint32) errno {
 	_, err := f.file.Flush(ctx)
 	return errorToErrno(err)
 }
 
-// Getattr implements the fs.NodeGetattrer interface.
+// Getattr implements the [fs.NodeGetattrer] interface.
 func (f *FS) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) errno {
 	if fh != nil {
 		if ga, ok := fh.(fs.FileGetattrer); ok {
@@ -212,7 +212,7 @@ func xattrEncoding(name string) func([]byte) string {
 	}
 }
 
-// Getxattr implements the fs.NodeGetxattrer interface.
+// Getxattr implements the [fs.NodeGetxattrer] interface.
 func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, errno) {
 	buf := dest[:0]
 	var encode func([]byte) string
@@ -247,7 +247,7 @@ func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, er
 	return uint32(len(buf)), 0
 }
 
-// Link implements the fs.NodeLinker interface.
+// Link implements the [fs.NodeLinker] interface.
 func (f *FS) Link(ctx context.Context, target fs.InodeEmbedder, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
 	if f.file.Child().Has(name) {
 		return nil, syscall.EEXIST // disallow linking over an existing name
@@ -265,7 +265,7 @@ func (f *FS) Link(ctx context.Context, target fs.InodeEmbedder, name string, out
 	return f.NewInode(ctx, nfs, fileStableAttr(nfs.file)), 0
 }
 
-// Listxattr implements the fs.NodeListxattrer interface.
+// Listxattr implements the [fs.NodeListxattrer] interface.
 func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
 	buf := dest[:0]
 	for _, name := range f.file.XAttr().Names() {
@@ -279,7 +279,7 @@ func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
 	return uint32(len(buf)), 0
 }
 
-// Lookup implements the fs.NodeLookuper interface.
+// Lookup implements the [fs.NodeLookuper] interface.
 func (f *FS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
 	nf, err := f.file.Open(ctx, name)
 	if errors.Is(err, file.ErrChildNotFound) {
@@ -292,7 +292,7 @@ func (f *FS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.I
 	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
 }
 
-// Mkdir implements the fs.NodeMkdirer interface.
+// Mkdir implements the [fs.NodeMkdirer] interface.
 func (f *FS) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, errno) {
 	caller, ok := fuse.FromContext(ctx)
 	if !ok {
@@ -318,12 +318,12 @@ func (f *FS) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.Entr
 	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
 }
 
-// Open implements the fs.NodeOpener interface.
+// Open implements the [fs.NodeOpener] interface.
 func (f *FS) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, errno) {
 	return &fileHandle{fs: f, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}, 0, 0
 }
 
-// Readdir implements the fs.NodeReaddirer interface.
+// Readdir implements the [fs.NodeReaddirer] interface.
 func (f *FS) Readdir(ctx context.Context) (fs.DirStream, errno) {
 	kids := f.file.Child()
 	elts := make([]fuse.DirEntry, kids.Len())
@@ -340,7 +340,7 @@ func (f *FS) Readdir(ctx context.Context) (fs.DirStream, errno) {
 	return fs.NewListDirStream(elts), 0
 }
 
-// Readlink implements the fs.NodeReadlinker interface.
+// Readlink implements the [fs.NodeReadlinker] interface.
 func (f *FS) Readlink(ctx context.Context) ([]byte, errno) {
 	buf := make([]byte, int(f.file.Data().Size()))
 	if _, err := f.file.ReadAt(ctx, buf, 0); err != nil {
@@ -349,7 +349,7 @@ func (f *FS) Readlink(ctx context.Context) ([]byte, errno) {
 	return buf, 0
 }
 
-// Removexattr implements the fs.NodeRemovexattrer interface.
+// Removexattr implements the [fs.NodeRemovexattrer] interface.
 func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 	if strings.HasPrefix(attr, ffsStorageKey) || strings.HasPrefix(attr, ffsDataHash) {
 		return syscall.EPERM // virtual attributes, not writable
@@ -376,7 +376,7 @@ func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 	return 0
 }
 
-// Rename implements the fs.NodeRenameer interface.
+// Rename implements the [fs.NodeRenameer] interface.
 func (f *FS) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) errno {
 	np, ok := newParent.EmbeddedInode().Operations().(*FS)
 	if !ok {
@@ -411,7 +411,7 @@ func (f *FS) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder
 	return 0
 }
 
-// Rmdir implements the fs.NodeRmdirer interface.
+// Rmdir implements the [fs.NodeRmdirer] interface.
 func (f *FS) Rmdir(ctx context.Context, name string) errno {
 	uf, err := f.file.Open(ctx, name)
 	if errors.Is(err, file.ErrChildNotFound) {
@@ -428,7 +428,7 @@ func (f *FS) Rmdir(ctx context.Context, name string) errno {
 	return 0
 }
 
-// Setattr implements the fs.NodeSetattrer interface.
+// Setattr implements the [fs.NodeSetattrer] interface.
 func (f *FS) Setattr(ctx context.Context, _ fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) errno {
 	// Update the fields of the stat marked as valid in the request.
 	//
@@ -458,7 +458,7 @@ func (f *FS) Setattr(ctx context.Context, _ fs.FileHandle, in *fuse.SetAttrIn, o
 	return 0
 }
 
-// Setxattr implements the fs.NodeSetxattrer interface.
+// Setxattr implements the [fs.NodeSetxattrer] interface.
 func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint32) errno {
 	if strings.HasPrefix(attr, ffsStorageKey) || strings.HasPrefix(attr, ffsDataHash) {
 		return syscall.EPERM // virtual attributes, not writable
@@ -500,7 +500,7 @@ func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint3
 	return 0
 }
 
-// Symlink implements the fs.NodeSymlinker interface.
+// Symlink implements the [fs.NodeSymlinker] interface.
 func (f *FS) Symlink(ctx context.Context, target, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
 	caller, ok := fuse.FromContext(ctx)
 	if !ok {
@@ -526,7 +526,7 @@ func (f *FS) Symlink(ctx context.Context, target, name string, out *fuse.EntryOu
 	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
 }
 
-// Unlink implements the fs.NodeUnlinker interface.
+// Unlink implements the [fs.NodeUnlinker] interface.
 func (f *FS) Unlink(ctx context.Context, name string) errno {
 	uf, err := f.file.Open(ctx, name)
 	if errors.Is(err, file.ErrChildNotFound) {
@@ -558,13 +558,13 @@ type fileHandle struct {
 	writable, append bool
 }
 
-// Getattr implements the fs.FileGetattrer interface.
+// Getattr implements the [fs.FileGetattrer] interface.
 func (h fileHandle) Getattr(ctx context.Context, out *fuse.AttrOut) errno {
 	h.fs.fillAttr(&out.Attr)
 	return 0
 }
 
-// Read implements the fs.FileReader interface.
+// Read implements the [fs.FileReader] interface.
 func (h fileHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.ReadResult, errno) {
 	nr, err := h.fs.file.ReadAt(ctx, dest, off)
 	if err != nil && err != io.EOF {
@@ -576,7 +576,7 @@ func (h fileHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.Read
 	return fuse.ReadResultData(dest[:nr]), 0
 }
 
-// Release implements the fs.FileReleaser interface.
+// Release implements the [fs.FileReleaser] interface.
 func (h fileHandle) Release(ctx context.Context) errno {
 	h.fs.file.Child().Release() // un-pin cached child files
 	return errorToErrno(nil)
@@ -588,7 +588,7 @@ func (h fileHandle) touch() {
 	stat.Update()
 }
 
-// Write implements the fs.FileWriter interface.
+// Write implements the [fs.FileWriter] interface.
 func (h fileHandle) Write(ctx context.Context, data []byte, off int64) (uint32, errno) {
 	if !h.writable {
 		return 0, syscall.EPERM
@@ -603,7 +603,7 @@ func (h fileHandle) Write(ctx context.Context, data []byte, off int64) (uint32, 
 	return uint32(nw), errorToErrno(err)
 }
 
-// Flush implements the fs.FileFlusher interface.
+// Flush implements the [fs.FileFlusher] interface.
 func (h fileHandle) Flush(ctx context.Context) errno {
 	_, err := h.fs.file.Flush(ctx)
 	return errorToErrno(err)
