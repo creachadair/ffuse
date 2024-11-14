@@ -129,7 +129,7 @@ func (s *Service) Init(ctx context.Context) error {
 // for the filesystem mount point and prepares the filesystem root for service.
 //
 // The [Service.Run] method calls Mount if it has not already been run. It is
-// therefore not necessaryu to call it explicitly unless you want to check the
+// therefore not necessary to call it explicitly unless you want to check the
 // success of mounting before attempting to serve requests.
 func (s *Service) Mount(ctx context.Context) error {
 	if s.Path == nil {
