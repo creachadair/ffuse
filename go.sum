@@ -4,10 +4,10 @@ github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UF
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/creachadair/atomicfile v0.3.5 h1:i93bxeaH/rQR6XfJslola3XkOM1nEP3eIexuk9SWcSc=
 github.com/creachadair/atomicfile v0.3.5/go.mod h1:m7kIY2OUMygtETnMYe141rubsG4b+EusFLinlxxdHYM=
-github.com/creachadair/chirp v0.0.0-20241114003105-4baf44dd0411 h1:KbPHX9ra9xDeIaq/Bjtb5FqDpuRgFx4Hqcs+3urYt60=
-github.com/creachadair/chirp v0.0.0-20241114003105-4baf44dd0411/go.mod h1:4aoBp+ybtwSoE3ZPUqxr91pbghMslQT/67oQZFzxnZQ=
-github.com/creachadair/chirpstore v0.0.0-20241114003119-c53e8563b6d0 h1:42/1N5BFbg+BA3LITAb5FZmDw8Dc2T1fr9BRc1mrPz0=
-github.com/creachadair/chirpstore v0.0.0-20241114003119-c53e8563b6d0/go.mod h1:bafT8GhI4Q2Ed1eaIkOeLbMs9ltCFBe4or3ParIxVeY=
+github.com/creachadair/chirp v0.0.0-20241129174756-2dff11d58333 h1:1Pwz3iV1zzzl0rUqpCbwKYe4K16RSxOWg/7L/4pDwaE=
+github.com/creachadair/chirp v0.0.0-20241129174756-2dff11d58333/go.mod h1:MO1SkW62SDtH6aSoqDnevmaeFyCihB+JCZrInBDW5Vo=
+github.com/creachadair/chirpstore v0.0.0-20241129175111-a5753ff1177d h1:GawkvOfj2UYSBpyimSJbXkSOC2RnPbtYn0trLQ1oDRg=
+github.com/creachadair/chirpstore v0.0.0-20241129175111-a5753ff1177d/go.mod h1:ZnDDf/ym4HhdAymlmPSFShFZfwqXSjQTpQGNOYiiQvQ=
 github.com/creachadair/ffs v0.6.6 h1:XmqSmnU8hbCFtGvnj0xxfxmRmCLfjcpiN0BnJeF3cGA=
 github.com/creachadair/ffs v0.6.6/go.mod h1:bXYm4aum7FWDdXtI6AJd/e/y1fO0yhBG4ibRhChTI5Y=
 github.com/creachadair/ffstools v0.8.10 h1:mEeDAq3/HzoUfdlo3puvA3vYInXSlAaYIdjrENaNZYA=

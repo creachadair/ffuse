@@ -14,8 +14,8 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20241114003105-4baf44dd0411 // indirect
-	github.com/creachadair/chirpstore v0.0.0-20241114003119-c53e8563b6d0 // indirect
+	github.com/creachadair/chirp v0.0.0-20241129174756-2dff11d58333 // indirect
+	github.com/creachadair/chirpstore v0.0.0-20241129175111-a5753ff1177d // indirect
 	github.com/creachadair/mds v0.21.4 // indirect
 	github.com/creachadair/taskgroup v0.13.1 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
