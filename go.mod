@@ -12,7 +12,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20241129174756-2dff11d58333 // indirect
+	github.com/creachadair/chirp v0.0.0-20241203170543-75c3b4b20b68 // indirect
 	github.com/creachadair/chirpstore v0.0.0-20241129175111-a5753ff1177d // indirect
 	github.com/creachadair/mds v0.22.0 // indirect
 	github.com/creachadair/taskgroup v0.13.2 // indirect
