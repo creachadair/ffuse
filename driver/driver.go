@@ -41,7 +41,7 @@ import (
 // call [Service.Init] and [Service.Mount] separately before Run.
 type Service struct {
 	// Store is used as the blob storage for filesystem operations (required)
-	Store config.CAS
+	Store config.Store
 
 	MountPath string // required
 	RootKey   string // required
@@ -89,7 +89,7 @@ func (s *Service) vlogf(msg string, args ...any) {
 func (s *Service) Init(ctx context.Context) error {
 	// Check settings for consistency.
 	switch {
-	case s.Store == (config.CAS{}):
+	case s.Store == (config.Store{}):
 		return errors.New("missing store implementation")
 	case s.MountPath == "":
 		return errors.New("missing mount path")
