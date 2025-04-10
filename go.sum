@@ -6,8 +6,8 @@ github.com/creachadair/atomicfile v0.3.8 h1:PyMIBZHZunTF+2+OSJCUg4XWO9nh6NwIacUB
 github.com/creachadair/atomicfile v0.3.8/go.mod h1:oZrfNyYdwMjCD+eKNqsnPmdnQ54z4ujOoYvNTZyuJ2A=
 github.com/creachadair/chirp v0.0.0-20250403160620-f3169756dd4e h1:roQUlTlbfsf7dG/z9Wum/BibTto+gAaDEcvv18vA4vw=
 github.com/creachadair/chirp v0.0.0-20250403160620-f3169756dd4e/go.mod h1:UUW+gESTqiNveVJlQ+YP629+dehdKIpZfp1dzGLNxzs=
-github.com/creachadair/chirpstore v0.0.0-20250402154759-9fcbf3824e70 h1:Qh/pWjnox8Uyi8uRRLhagzQb1yTzlvJbc1bWiVSLoHk=
-github.com/creachadair/chirpstore v0.0.0-20250402154759-9fcbf3824e70/go.mod h1:7eRW00GP6fa9nr76oln5yNIzCzOosUyitCpBWVeUY+8=
+github.com/creachadair/chirpstore v0.0.0-20250410164029-834b54096fca h1:VH2WTwrOSsBrDSB9t7DMsquK+ZXB6OJwe81nTnylhvk=
+github.com/creachadair/chirpstore v0.0.0-20250410164029-834b54096fca/go.mod h1:lxIRr4KzyNSVtRZg9mKmtN6v38ft+n8w/WSuhvxIRAI=
 github.com/creachadair/ffs v0.13.16 h1:1vv2K6NsjVS9B455RexvrYfc9cUtwQ9ES41Es+GPqOg=
 github.com/creachadair/ffs v0.13.16/go.mod h1:PX+Ye+Ure+2n1pJaLqpHRNaKODg/iJdGK3snhCf8fds=
 github.com/creachadair/ffstools v0.13.7 h1:rRbQtkaWQ1TrKY9X78GsZc1oXEy99xDqv4qU6VWPsIk=
