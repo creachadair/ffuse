@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/creachadair/ffs v0.13.16
-	github.com/creachadair/ffstools v0.13.7
+	github.com/creachadair/ffstools v0.13.10
 	github.com/hanwen/go-fuse/v2 v2.7.2
 	golang.org/x/crypto v0.37.0
 )
