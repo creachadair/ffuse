@@ -4,14 +4,14 @@ go 1.24
 
 require (
 	github.com/creachadair/ffs v0.13.16
-	github.com/creachadair/ffstools v0.13.10
+	github.com/creachadair/ffstools v0.13.11
 	github.com/hanwen/go-fuse/v2 v2.7.2
 	golang.org/x/crypto v0.37.0
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/creachadair/chirp v0.0.0-20250403160620-f3169756dd4e // indirect
+	github.com/creachadair/chirp v0.0.0-20250412175921-5f9c12b58822 // indirect
 	github.com/creachadair/chirpstore v0.0.0-20250410164029-834b54096fca // indirect
 	github.com/creachadair/mds v0.24.2 // indirect
 	github.com/creachadair/taskgroup v0.13.2 // indirect
