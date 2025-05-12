@@ -12,8 +12,8 @@ github.com/creachadair/ffs v0.13.16 h1:1vv2K6NsjVS9B455RexvrYfc9cUtwQ9ES41Es+GPq
 github.com/creachadair/ffs v0.13.16/go.mod h1:PX+Ye+Ure+2n1pJaLqpHRNaKODg/iJdGK3snhCf8fds=
 github.com/creachadair/ffstools v0.13.11 h1:5LLds7jiqhVGCB63rt3Z+rAfj0j0brn+5GPB7I9k67Q=
 github.com/creachadair/ffstools v0.13.11/go.mod h1:saibUdAQt2GoD6NazyDkkk7fQljpnIFEEmDDP0D4ILg=
-github.com/creachadair/mds v0.24.2 h1:J3EUS8nUP33t8XZ8N5SqNtOVQFHJ4ntz0MjesASbU3Y=
-github.com/creachadair/mds v0.24.2/go.mod h1:ArfS0vPHoLV/SzuIzoqTEZfoYmac7n9Cj8XPANHocvw=
+github.com/creachadair/mds v0.24.3 h1:X7cM2ymZSyl4IVWnfyXLxRXMJ6awhbcWvtLPhfnTaqI=
+github.com/creachadair/mds v0.24.3/go.mod h1:0oeHt9QWu8VfnmskOL4zi2CumjEvB29ScmtOmdrhFeU=
 github.com/creachadair/taskgroup v0.13.2 h1:3KyqakBuFsm3KkXi/9XIb0QcA8tEzLHLgaoidf0MdVc=
 github.com/creachadair/taskgroup v0.13.2/go.mod h1:i3V1Zx7H8RjwljUEeUWYT30Lmb9poewSb2XI1yTwD0g=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
