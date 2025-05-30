@@ -265,12 +265,32 @@ func (f *FS) Link(ctx context.Context, target fs.InodeEmbedder, name string, out
 	return f.NewInode(ctx, nfs, fileStableAttr(nfs.file)), 0
 }
 
+// addMagicXAttrs appends the names of the "magic" implicit xattrs to data, and
+// returns the resulting slice.
+func (f *FS) addMagicXAttrs(data []byte) []byte {
+	buf := data[:0]
+	buf = addString(buf, ffsStorageKey)
+	buf = addString(buf, ffsStorageKeyB64)
+	buf = addString(buf, ffsStorageKeyHex)
+	if f.file.Stat().Mode.IsRegular() {
+		buf = addString(buf, ffsDataHash)
+		buf = addString(buf, ffsDataHashB64)
+		buf = addString(buf, ffsDataHashHex)
+	}
+	return buf
+}
+
+// addString appends s and a NUL byte to buf, and returns the resulting slice.
+func addString(buf []byte, s string) []byte {
+	buf = append(buf, s...)
+	return append(buf, 0) // NUL terminator
+}
+
 // Listxattr implements the [fs.NodeListxattrer] interface.
 func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
-	buf := dest[:0]
+	buf := f.addMagicXAttrs(dest)
 	for _, name := range f.file.XAttr().Names() {
-		buf = append(buf, name...)
-		buf = append(buf, 0) // NUL terminator
+		buf = addString(buf, name)
 	}
 	if len(buf) > len(dest) {
 		// Insufficient capacity: Report the desired size and an error.
