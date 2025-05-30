@@ -267,6 +267,8 @@ func (f *FS) Link(ctx context.Context, target fs.InodeEmbedder, name string, out
 
 // addMagicXAttrs appends the names of the "magic" implicit xattrs to data, and
 // returns the resulting slice.
+//
+//lint:ignore U1000 Decide if we really want this.
 func (f *FS) addMagicXAttrs(data []byte) []byte {
 	buf := data[:0]
 	buf = addString(buf, ffsStorageKey)
@@ -288,7 +290,7 @@ func addString(buf []byte, s string) []byte {
 
 // Listxattr implements the [fs.NodeListxattrer] interface.
 func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
-	buf := f.addMagicXAttrs(dest)
+	buf := dest[:0]
 	for _, name := range f.file.XAttr().Names() {
 		buf = addString(buf, name)
 	}
