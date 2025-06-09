@@ -42,7 +42,7 @@ func NewFS(root *file.File) *FS { return &FS{file: root} }
 
 type FS struct {
 	// The fs.Inode is self-synchronizing, and is accessed via its
-	// impelmentation of the fs.InodeEmbedder interface. Its key requirement is
+	// implementation of the fs.InodeEmbedder interface. Its key requirement is
 	// that we must not copy the value.
 	fs.Inode
 
