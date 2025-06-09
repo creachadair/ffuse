@@ -36,7 +36,7 @@ import (
 // responsible for flushing out the final state of the filesystem, which can be
 // recovered from the PathInfo field.
 //
-// Run initalizes and mounts the fileysystem if these have not already been
+// Run initalizes and mounts the filesystem if these have not already been
 // done, but if you need to perform tasks before and after mounting, you may
 // call [Service.Init] and [Service.Mount] separately before Run.
 type Service struct {
