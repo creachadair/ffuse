@@ -4,6 +4,7 @@ package driver
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -11,7 +12,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/creachadair/ffstools/ffs/config"
+	"github.com/creachadair/ffs/filetree"
 	"github.com/creachadair/ffuse"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
@@ -41,7 +42,7 @@ import (
 // call [Service.Init] and [Service.Mount] separately before Run.
 type Service struct {
 	// Store is used as the blob storage for filesystem operations (required)
-	Store config.Store
+	Store filetree.Store
 
 	MountPath string // required
 	RootKey   string // required
@@ -57,7 +58,7 @@ type Service struct {
 	Logf func(string, ...any)
 
 	// Path is set by Init to the path info for the filesystem root.
-	Path *config.PathInfo
+	Path *filetree.PathInfo
 
 	// Fuse library settings.
 	Options fs.Options
@@ -89,7 +90,7 @@ func (s *Service) vlogf(msg string, args ...any) {
 func (s *Service) Init(ctx context.Context) error {
 	// Check settings for consistency.
 	switch {
-	case s.Store == (config.Store{}):
+	case s.Store == (filetree.Store{}):
 		return errors.New("missing store implementation")
 	case s.MountPath == "":
 		return errors.New("missing mount path")
@@ -102,18 +103,18 @@ func (s *Service) Init(ctx context.Context) error {
 	}
 
 	// Load the root of the filesystem.
-	pi, err := config.OpenPath(ctx, s.Store, s.RootKey)
+	pi, err := filetree.OpenPath(ctx, s.Store, s.RootKey)
 	if err != nil {
 		return fmt.Errorf("load root path: %w", err)
 	}
 	s.Path = pi
 	if pi.Root != nil {
-		s.vlogf("Loaded filesystem from %q (%s)", pi.RootKey, config.FormatKey(pi.FileKey))
+		s.vlogf("Loaded filesystem from %q (%s)", pi.RootKey, formatKey(pi.FileKey))
 		if pi.Root.Description != "" {
 			s.vlogf("| Description: %q", pi.Root.Description)
 		}
 	} else {
-		s.vlogf("Loaded filesystem at %s (no root pointer)", config.FormatKey(pi.FileKey))
+		s.vlogf("Loaded filesystem at %s (no root pointer)", formatKey(pi.FileKey))
 	}
 
 	// If requested, hook up a logger for the FUSE internals (very noisy).
@@ -239,8 +240,13 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			if err != nil {
 				s.logPrintf("WARNING: Error flushing root: %v", err)
 			} else if oldKey != newKey {
-				s.vlogf("Root flushed, storage key is now %s", config.FormatKey(newKey))
+				s.vlogf("Root flushed, storage key is now %s", formatKey(newKey))
 			}
 		}
 	}
+}
+
+// formatKey converts key into a base64 value.
+func formatKey(key string) string {
+	return base64.StdEncoding.EncodeToString([]byte(key))
 }
