@@ -3,7 +3,7 @@ module github.com/creachadair/ffuse
 go 1.24
 
 require (
-	github.com/creachadair/ffs v0.14.2
+	github.com/creachadair/ffs v0.14.3
 	github.com/hanwen/go-fuse/v2 v2.8.0
 	golang.org/x/crypto v0.41.0
 )
@@ -15,7 +15,7 @@ require (
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
-	google.golang.org/protobuf v1.36.7 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 )
 
