@@ -32,7 +32,6 @@ import (
 	"github.com/creachadair/ffs/file"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
-	"golang.org/x/crypto/sha3"
 )
 
 type errno = syscall.Errno
@@ -226,11 +225,7 @@ func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, er
 		buf = append(buf, key...)
 	case ffsDataHash, ffsDataHashB64, ffsDataHashHex:
 		encode = xattrEncoding(attr)
-		h := sha3.New256()
-		for _, key := range f.file.Data().Keys() {
-			io.WriteString(h, key)
-		}
-		buf = h.Sum(buf)
+		buf = append(buf, f.file.Data().Hash()...)
 	default:
 		xa := f.file.XAttr()
 		if !xa.Has(attr) {
