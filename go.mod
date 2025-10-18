@@ -3,7 +3,7 @@ module github.com/creachadair/ffuse
 go 1.24.0
 
 require (
-	github.com/creachadair/ffs v0.14.7
+	github.com/creachadair/ffs v0.15.0
 	github.com/hanwen/go-fuse/v2 v2.8.0
 )
 
