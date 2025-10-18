@@ -599,11 +599,7 @@ func (h fileHandle) Release(ctx context.Context) errno {
 	return errorToErrno(nil)
 }
 
-func (h fileHandle) touch() {
-	stat := h.fs.file.Stat()
-	stat.ModTime = time.Now()
-	stat.Update()
-}
+func (h fileHandle) touch() { h.fs.file.Stat().WithModTime(time.Now()).Update() }
 
 // Write implements the [fs.FileWriter] interface.
 func (h fileHandle) Write(ctx context.Context, data []byte, off int64) (uint32, errno) {
