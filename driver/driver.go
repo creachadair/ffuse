@@ -46,7 +46,7 @@ type Service struct {
 
 	MountPath string // required
 	RootKey   string // required
-	ReadOnly  bool
+	Writable  bool
 	AutoFlush time.Duration
 	DebugLog  bool
 	Verbose   bool
@@ -96,7 +96,7 @@ func (s *Service) Init(ctx context.Context) error {
 		return errors.New("missing mount path")
 	case s.RootKey == "":
 		return errors.New("missing root key")
-	case s.ReadOnly && s.AutoFlush > 0:
+	case !s.Writable && s.AutoFlush > 0:
 		return errors.New("cannot combine read-only with auto-flush")
 	case s.Exec && len(s.ExecArgs) == 0:
 		return errors.New("missing exec command")
@@ -138,7 +138,7 @@ func (s *Service) Mount(ctx context.Context) error {
 			return err
 		}
 	}
-	if s.ReadOnly {
+	if !s.Writable {
 		s.Options.MountOptions.Options = append(s.Options.MountOptions.Options, "ro")
 	}
 
