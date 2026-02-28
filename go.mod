@@ -3,12 +3,12 @@ module github.com/creachadair/ffuse
 go 1.25.0
 
 require (
-	github.com/creachadair/ffs v0.17.3
+	github.com/creachadair/ffs v0.17.4
 	github.com/hanwen/go-fuse/v2 v2.9.0
 )
 
 require (
-	github.com/creachadair/mds v0.25.15 // indirect
+	github.com/creachadair/mds v0.26.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/mod v0.31.0 // indirect
