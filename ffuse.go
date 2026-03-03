@@ -36,6 +36,8 @@ import (
 
 type errno = syscall.Errno
 
+const noError syscall.Errno = 0
+
 // NewFS constructs a new FS with the given root file.
 func NewFS(root *file.File) *FS { return &FS{file: root} }
 
@@ -96,7 +98,7 @@ func (f *FS) Access(ctx context.Context, mask uint32) errno {
 	if mask&bits != mask {
 		return syscall.EACCES
 	}
-	return 0
+	return noError
 }
 
 // Create implements the [fs.NodeCreater] interface.
@@ -185,7 +187,7 @@ func (f *FS) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) e
 		}
 	}
 	f.fillAttr(&out.Attr)
-	return 0
+	return noError
 }
 
 const (
@@ -383,14 +385,14 @@ func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 			return xattrErrnoNotFound
 		}
 		go f.NotifyEntry(t) // outside the lock
-		return 0
+		return noError
 	}
 	xa := f.file.XAttr()
 	if !xa.Has(attr) {
 		return xattrErrnoNotFound
 	}
 	xa.Remove(attr)
-	return 0
+	return noError
 }
 
 // Rename implements the [fs.NodeRenameer] interface.
@@ -425,7 +427,7 @@ func (f *FS) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder
 	// directory: Remove the old entry, then add the new entry.
 	f.file.Child().Remove(name)
 	np.file.Child().Set(newName, cf)
-	return 0
+	return noError
 }
 
 // Rmdir implements the [fs.NodeRmdirer] interface.
@@ -442,7 +444,7 @@ func (f *FS) Rmdir(ctx context.Context, name string) errno {
 	} else if !f.file.Child().Remove(name) {
 		return syscall.ENOENT
 	}
-	return 0
+	return noError
 }
 
 // Setattr implements the [fs.NodeSetattrer] interface.
@@ -472,7 +474,7 @@ func (f *FS) Setattr(ctx context.Context, _ fs.FileHandle, in *fuse.SetAttrIn, o
 	}
 	s.Update()
 	f.fillAttr(&out.Attr)
-	return 0
+	return noError
 }
 
 // Setxattr implements the [fs.NodeSetxattrer] interface.
@@ -503,7 +505,7 @@ func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint3
 		}
 		f.file.Child().Set(t, tf)
 		go f.NotifyEntry(t) // outside the lock
-		return 0
+		return noError
 	}
 
 	xa := f.file.XAttr()
@@ -514,7 +516,7 @@ func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint3
 		return xattrErrnoNotFound // replace, but it doesn't exist
 	}
 	xa.Set(attr, string(data))
-	return 0
+	return noError
 }
 
 // Symlink implements the [fs.NodeSymlinker] interface.
@@ -558,7 +560,7 @@ func (f *FS) Unlink(ctx context.Context, name string) errno {
 	} else if !f.file.Child().Remove(name) {
 		return syscall.ENOENT
 	}
-	return 0
+	return noError
 }
 
 // Verify that filehandles support interfaces required by the FUSE integration.
@@ -578,7 +580,7 @@ type fileHandle struct {
 // Getattr implements the [fs.FileGetattrer] interface.
 func (h fileHandle) Getattr(ctx context.Context, out *fuse.AttrOut) errno {
 	h.fs.fillAttr(&out.Attr)
-	return 0
+	return noError
 }
 
 // Read implements the [fs.FileReader] interface.
