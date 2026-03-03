@@ -300,6 +300,10 @@ func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
 
 // Lookup implements the [fs.NodeLookuper] interface.
 func (f *FS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, errno) {
+	// Reuse an existing inode allocation, if possible.
+	if c, ok := f.EmbeddedInode().Children()[name]; ok {
+		return c, noError
+	}
 	nf, err := f.file.Open(ctx, name)
 	if errors.Is(err, file.ErrChildNotFound) {
 		return nil, syscall.ENOENT
