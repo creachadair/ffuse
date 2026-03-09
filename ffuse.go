@@ -576,6 +576,10 @@ var (
 	_ fs.FileWriter    = &fileHandle{}
 )
 
+// fileHandle wraps an [FS] to serve a file handle to FUSE. It is passed by
+// address rather than by value so that distinct filehandles, even with
+// equivalent contents, will not collide. That is necessary to prevent a close
+// of one filehandle from invalidating others with the same settings.
 type fileHandle struct {
 	fs               *FS
 	writable, append bool
