@@ -449,9 +449,10 @@ func (f *FS) Rmdir(ctx context.Context, name string) errno {
 
 	if uf.Child().Len() != 0 {
 		return syscall.ENOTEMPTY
-	} else if !f.file.Child().Remove(name) {
-		return syscall.ENOENT
 	}
+
+	// Note we already checked for existence above, so don't check again.
+	f.file.Child().Remove(name)
 	return noError
 }
 
@@ -565,9 +566,10 @@ func (f *FS) Unlink(ctx context.Context, name string) errno {
 	// POSIX wants us not to allow removal of non-empty directories.
 	if uf.Stat().Mode.IsDir() && uf.Child().Len() != 0 {
 		return syscall.ENOTEMPTY
-	} else if !f.file.Child().Remove(name) {
-		return syscall.ENOENT
 	}
+
+	// Note we already checked for existence above, so don't check again.
+	f.file.Child().Remove(name)
 	return noError
 }
 
