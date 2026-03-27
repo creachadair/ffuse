@@ -29,6 +29,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/ffs/file"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
@@ -640,6 +641,9 @@ func errorToErrno(err error) errno {
 		return fs.OK
 	} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return syscall.EINTR
+	}
+	if errors.Is(err, blob.ErrKeyNotFound) {
+		return syscall.ENOENT
 	}
 	return fs.ToErrno(err)
 }
