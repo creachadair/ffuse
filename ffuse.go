@@ -141,8 +141,16 @@ func (f *FS) Create(ctx context.Context, name string, flags, mode uint32, out *f
 
 	nfs := &FS{file: nf}
 	nfs.fillAttr(&out.Attr)
-	in = f.NewInode(ctx, nfs, fileStableAttr(nf))
 	fh = &fileHandle{fs: nfs, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}
+
+	// If we are re-opening an existing child of f, reuse the inode.
+	if err == nil {
+		if c, ok := f.EmbeddedInode().Children()[name]; ok {
+			in = c
+			return
+		}
+	}
+	in = f.NewInode(ctx, nfs, fileStableAttr(nf))
 	return
 }
 
