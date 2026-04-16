@@ -103,7 +103,7 @@ func (s *Service) Init(ctx context.Context) error {
 	}
 
 	// Load the root of the filesystem.
-	pi, err := filetree.OpenPath(ctx, s.Store, s.RootKey)
+	pi, err := s.Store.OpenPath(ctx, s.RootKey)
 	if err != nil {
 		return fmt.Errorf("load root path: %w", err)
 	}
