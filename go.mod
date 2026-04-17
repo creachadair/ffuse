@@ -9,7 +9,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/creachadair/mds v0.27.0 // indirect
+	github.com/creachadair/mds v0.27.1 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/mod v0.31.0 // indirect
