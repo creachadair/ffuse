@@ -170,13 +170,11 @@ func (f *FS) fillAttr(out *fuse.Attr) {
 		nb = f.file.Data().Size()
 	}
 
-	mtns := s.ModTime.UnixNano()
-
 	out.Size = uint64(nb)
 	out.Blocks = uint64((nb + 511) / 512)
 	out.Mode = toSysMode(s.Mode)
-	out.Mtime = uint64(mtns / 1e9)     // seconds
-	out.Mtimensec = uint32(mtns % 1e9) // nanoseconds within second
+	out.Mtime = uint64(s.ModTime.Unix())           // seconds
+	out.Mtimensec = uint32(s.ModTime.Nanosecond()) // nanoseconds within second
 	out.Owner.Uid = uint32(s.OwnerID)
 	out.Owner.Gid = uint32(s.GroupID)
 	out.Nlink = nlink
