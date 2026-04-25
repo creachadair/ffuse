@@ -248,7 +248,7 @@ func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, er
 	if len(buf) > len(dest) {
 		return uint32(len(buf)), syscall.ERANGE
 	}
-	return uint32(len(buf)), 0
+	return uint32(len(buf)), noError
 }
 
 // Link implements the [fs.NodeLinker] interface.
@@ -266,7 +266,7 @@ func (f *FS) Link(ctx context.Context, target fs.InodeEmbedder, name string, out
 	f.file.Child().Set(name, tf.file)
 	nfs := &FS{file: tf.file}
 	nfs.fillAttr(&out.Attr)
-	return f.NewInode(ctx, nfs, fileStableAttr(nfs.file)), 0
+	return f.NewInode(ctx, nfs, fileStableAttr(nfs.file)), noError
 }
 
 // addMagicXAttrs appends the names of the "magic" implicit xattrs to data, and
@@ -302,7 +302,7 @@ func (f *FS) Listxattr(ctx context.Context, dest []byte) (uint32, errno) {
 		// Insufficient capacity: Report the desired size and an error.
 		return uint32(len(buf)), syscall.ERANGE
 	}
-	return uint32(len(buf)), 0
+	return uint32(len(buf)), noError
 }
 
 // Lookup implements the [fs.NodeLookuper] interface.
@@ -322,7 +322,7 @@ func (f *FS) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.I
 	}
 	nfs := &FS{file: nf}
 	nfs.fillAttr(&out.Attr)
-	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
+	return f.NewInode(ctx, nfs, fileStableAttr(nf)), noError
 }
 
 // Mkdir implements the [fs.NodeMkdirer] interface.
@@ -348,12 +348,12 @@ func (f *FS) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.Entr
 	f.file.Child().Set(name, nf)
 	nfs := &FS{file: nf}
 	nfs.fillAttr(&out.Attr)
-	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
+	return f.NewInode(ctx, nfs, fileStableAttr(nf)), noError
 }
 
 // Open implements the [fs.NodeOpener] interface.
 func (f *FS) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, errno) {
-	return &fileHandle{fs: f, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}, 0, 0
+	return &fileHandle{fs: f, writable: !isReadOnly(flags), append: flags&syscall.O_APPEND != 0}, 0, noError
 }
 
 // Readdir implements the [fs.NodeReaddirer] interface.
@@ -370,7 +370,7 @@ func (f *FS) Readdir(ctx context.Context) (fs.DirStream, errno) {
 			Name: name,
 		}
 	}
-	return fs.NewListDirStream(elts), 0
+	return fs.NewListDirStream(elts), noError
 }
 
 // Readlink implements the [fs.NodeReadlinker] interface.
@@ -379,7 +379,7 @@ func (f *FS) Readlink(ctx context.Context) ([]byte, errno) {
 	if _, err := f.file.ReadAt(ctx, buf, 0); err != nil {
 		return nil, errorToErrno(err)
 	}
-	return buf, 0
+	return buf, noError
 }
 
 // Removexattr implements the [fs.NodeRemovexattrer] interface.
@@ -557,7 +557,7 @@ func (f *FS) Symlink(ctx context.Context, target, name string, out *fuse.EntryOu
 	f.file.Child().Set(name, nf)
 	nfs := &FS{file: nf}
 	nfs.fillAttr(&out.Attr)
-	return f.NewInode(ctx, nfs, fileStableAttr(nf)), 0
+	return f.NewInode(ctx, nfs, fileStableAttr(nf)), noError
 }
 
 // Unlink implements the [fs.NodeUnlinker] interface.
@@ -612,7 +612,7 @@ func (h fileHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.Read
 		// error back to FUSE, however, because that will turn into EIO.
 		return nil, errorToErrno(err)
 	}
-	return fuse.ReadResultData(dest[:nr]), 0
+	return fuse.ReadResultData(dest[:nr]), noError
 }
 
 // Release implements the [fs.FileReleaser] interface.
