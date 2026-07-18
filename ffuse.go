@@ -415,33 +415,34 @@ func (f *FS) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder
 	if !ok {
 		return syscall.ENOSYS
 	}
-	cf, err := f.file.Open(ctx, name) // this is the file to be renamed
+
+	// The file to be renamed. We need its stat for type checks below.
+	cf, err := f.file.Open(ctx, name)
 	if errors.Is(err, file.ErrChildNotFound) {
 		return syscall.ENOENT
 	} else if err != nil {
 		return errorToErrno(err)
 	}
-	tf, err := np.file.Open(ctx, newName) // this is the target name
-	if err == nil {
-		if tf.Stat().Mode.IsDir() {
-			return syscall.EEXIST // disallow replacement of an existing directory
 
-			// The rename(2) documentation implies src can replace tgt if they are
-			// both directories, but in practice most filesystems appear to reject
-			// an attempt to replace a directory with anything, even if they are
-			// both empty. So I have adopted the same semantics here.
-		} else if cf.Stat().Mode.IsDir() {
-			return syscall.EEXIST // disallow overwriting a file with a directory
-		}
-	} else if !errors.Is(err, file.ErrChildNotFound) {
+	// Type checks: Files may not replace directories and vice versa.  Moreover,
+	// we can only replace an existing directory with another directory, and
+	// only if the target is empty.
+	tf, err := np.file.Open(ctx, newName)
+	if errors.Is(err, file.ErrChildNotFound) {
+		// OK, target does not exist
+	} else if err != nil {
 		return errorToErrno(err)
+	} else if tf.Stat().Mode.IsDir() {
+		// Replacement of an existing directory is allowed only if the source is
+		// also a directory, and the target is empty.
+		if !cf.Stat().Mode.IsDir() || tf.Child().Len() != 0 {
+			return syscall.EEXIST
+		}
+	} else if cf.Stat().Mode.IsDir() {
+		// Disallow replacement of a non-directory file with a directory.
+		return syscall.EEXIST
 	}
-
-	// Order matters here, since we may be renaming the child within the same
-	// directory: Remove the old entry, then add the new entry.
-	f.file.Child().Remove(name)
-	np.file.Child().Set(newName, cf)
-	return noError
+	return errorToErrno(file.Move(f.file, name, np.file, newName))
 }
 
 // Rmdir implements the [fs.NodeRmdirer] interface.
@@ -650,7 +651,7 @@ func errorToErrno(err error) errno {
 	} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return syscall.EINTR
 	}
-	if errors.Is(err, blob.ErrKeyNotFound) {
+	if errors.Is(err, blob.ErrKeyNotFound) || errors.Is(err, file.ErrChildNotFound) {
 		return syscall.ENOENT
 	}
 	return fs.ToErrno(err)
