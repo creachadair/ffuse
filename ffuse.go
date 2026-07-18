@@ -409,7 +409,7 @@ func (f *FS) Removexattr(ctx context.Context, attr string) errno {
 	return noError
 }
 
-// Rename implements the [fs.NodeRenameer] interface.
+// Rename implements the [fs.NodeRenamer] interface.
 func (f *FS) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) errno {
 	np, ok := newParent.EmbeddedInode().Operations().(*FS)
 	if !ok {
