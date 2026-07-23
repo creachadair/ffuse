@@ -4,7 +4,6 @@ package driver
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -109,12 +108,12 @@ func (s *Service) Init(ctx context.Context) error {
 	}
 	s.Path = pi
 	if pi.Root != nil {
-		s.vlogf("Loaded filesystem from %q (%s)", pi.RootKey, formatKey(pi.FileKey))
+		s.vlogf("Loaded filesystem from %q (%s)", pi.RootKey, filetree.FormatKey32(pi.FileKey))
 		if pi.Root.Description != "" {
 			s.vlogf("| Description: %q", pi.Root.Description)
 		}
 	} else {
-		s.vlogf("Loaded filesystem at %s (no root pointer)", formatKey(pi.FileKey))
+		s.vlogf("Loaded filesystem at %s (no root pointer)", filetree.FormatKey32(pi.FileKey))
 	}
 
 	// If requested, hook up a logger for the FUSE internals (very noisy).
@@ -240,13 +239,8 @@ func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
 			if err != nil {
 				s.logPrintf("WARNING: Error flushing root: %v", err)
 			} else if oldKey != newKey {
-				s.vlogf("Root flushed, storage key is now %s", formatKey(newKey))
+				s.vlogf("Root flushed, storage key is now %s", filetree.FormatKey32(newKey))
 			}
 		}
 	}
-}
-
-// formatKey converts key into a base64 value.
-func formatKey(key string) string {
-	return base64.StdEncoding.EncodeToString([]byte(key))
 }
