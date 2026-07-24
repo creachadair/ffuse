@@ -95,8 +95,6 @@ func (s *Service) Init(ctx context.Context) error {
 		return errors.New("missing mount path")
 	case s.RootKey == "":
 		return errors.New("missing root key")
-	case !s.Writable && s.AutoFlush > 0:
-		return errors.New("cannot combine read-only with auto-flush")
 	case s.Exec && len(s.ExecArgs) == 0:
 		return errors.New("missing exec command")
 	}
@@ -179,8 +177,9 @@ func (s *Service) Run(ctx context.Context) error {
 		s.Server.Wait()
 	}()
 
-	// If we are supposed to auto-flush, set up a task to do that now.
-	if s.AutoFlush > 0 {
+	// If we are supposed to auto-flush, and the filesystem is writable, start a
+	// task to handle periodic flushes.
+	if s.Writable && s.AutoFlush > 0 {
 		s.vlogf("Enabling auto-flush every %v", s.AutoFlush)
 		go s.autoFlush(ctx, s.AutoFlush)
 	}
