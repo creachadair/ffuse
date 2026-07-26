@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/creachadair/ffs v0.17.20
-	github.com/hanwen/go-fuse/v2 v2.10.1
+	github.com/hanwen/go-fuse/v2 v2.11.0
 )
 
 require (
