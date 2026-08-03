@@ -196,7 +196,14 @@ func (s *Service) Run(ctx context.Context) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+
+		// As a special case, if the mount process got its connection to the
+		// store via a pipe, close that pipe for the child process, so it does
+		// not race the mount process itself (us).
+		// TODO(creachadair): If for some reason we need to pass it through, we
+		// could wire up a proxy, but that seems unnecessary.
 		cmd.Env = filterEnvironment()
+		cmd.ExtraFiles = []*os.File{nil, nil} // nil means "close this fd"
 		errc = make(chan error, 1)
 		go func() {
 			defer close(errc)
