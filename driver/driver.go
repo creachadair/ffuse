@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/creachadair/ffs/filetree"
@@ -194,6 +196,7 @@ func (s *Service) Run(ctx context.Context) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Env = filterEnvironment()
 		errc = make(chan error, 1)
 		go func() {
 			defer close(errc)
@@ -222,6 +225,17 @@ func (s *Service) Run(ctx context.Context) error {
 		<-sctx.Done()
 		return err
 	}
+}
+
+// filterEnvironment returns a filtered version of [os.Environ] suitable for a
+// mount subprocess. In particular, it discards a setting of FFS_STORE pointing
+// to a pipe, since that indicates the mount parent is being served storage
+// that way, and we do not want to cascade that to the subprocess.
+// If FFS_STORE is set to something else, however, we still pass it along.
+func filterEnvironment() []string {
+	return slices.DeleteFunc(os.Environ(), func(env string) bool {
+		return strings.HasPrefix(env, "FFS_STORE=_pipe:")
+	})
 }
 
 func (s *Service) autoFlush(ctx context.Context, d time.Duration) {
