@@ -146,7 +146,7 @@ func (s *Service) Mount(ctx context.Context) error {
 	if err != nil {
 		return err
 	} else if err := s.Server.WaitMount(); err != nil {
-		return errors.Join(err, s.Server.Unmount())
+		return errors.Join(err, s.tryUnmount(1))
 	}
 	return nil
 }
@@ -217,7 +217,7 @@ func (s *Service) Run(ctx context.Context) error {
 			s.logPrintf("Server exited (filesystem unmounted)")
 		} else {
 			s.logPrintf("Received signal, unmounting...")
-			if err := s.Server.Unmount(); err != nil {
+			if err := s.tryUnmount(5); err != nil {
 				s.logPrintf("WARNING: Unmount failed: %v", err)
 			}
 		}
@@ -226,12 +226,24 @@ func (s *Service) Run(ctx context.Context) error {
 		if err != nil {
 			s.logPrintf("Error from subprocess: %v", err)
 		}
-		if err := s.Server.Unmount(); err != nil {
+		if err := s.tryUnmount(5); err != nil {
 			s.logPrintf("WARNING: Unmount failed: %v", err)
 		}
 		<-sctx.Done()
 		return err
 	}
+}
+
+func (s *Service) tryUnmount(retries int) error {
+	var err error
+	for ; retries >= 0; retries-- {
+		err = s.Server.Unmount()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	return err
 }
 
 // filterEnvironment returns a filtered version of [os.Environ] suitable for a
