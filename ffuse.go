@@ -514,7 +514,7 @@ func (f *FS) Setxattr(ctx context.Context, attr string, data []byte, flags uint3
 		if exists && flags&xattrCreate != 0 {
 			return syscall.EEXIST
 		} else if !exists && flags&xattrReplace != 0 {
-			return syscall.ENOENT
+			return xattrErrnoNotFound
 		}
 
 		tf, err := f.file.Load(ctx, string(data))
