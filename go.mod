@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/creachadair/mds v0.30.5 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
@@ -17,7 +18,7 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/tools v0.44.1-0.20260420230617-19499e7caabc // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	honnef.co/go/tools v0.8.0 // indirect
+	honnef.co/go/tools v0.8.1 // indirect
 )
 
 tool honnef.co/go/tools/staticcheck
