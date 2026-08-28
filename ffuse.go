@@ -245,7 +245,9 @@ func (f *FS) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, er
 	if encode != nil {
 		buf = append(buf[:0], encode(buf)...)
 	}
-	if len(buf) > len(dest) {
+	// If len(dest) == 0, this is a request for the total size. Otherwise, if
+	// the list does not fit in the output buffer, we must report ERANGE.
+	if len(dest) != 0 && len(buf) > len(dest) {
 		return uint32(len(buf)), syscall.ERANGE
 	}
 	return uint32(len(buf)), noError
